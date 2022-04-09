@@ -5,4 +5,4 @@ out: x.o
 	gcc -o out $< $(LDFLAGS)
 
 clean:
-	rm x.o out
+	rm -f x.o out
