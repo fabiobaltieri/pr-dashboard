@@ -4,6 +4,7 @@
 
 #define TILE_RES 256
 
+
 int lon2tilex(double lon, int z)
 {
 	return (int)(floor((lon + 180.0) / 360.0 * (1 << z)));
