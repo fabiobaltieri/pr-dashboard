@@ -19,6 +19,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Cache PR data
+        id: cache-data
+        uses: actions/cache@v3
+        with:
+          path: cache
+          key: data-${{ hashFiles('cache/**') }}
+
+      - name: Update
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./update_pr.py
+
       - name: Setup pages
         uses: actions/configure-pages@v3
 
