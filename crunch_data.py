@@ -56,11 +56,12 @@ for number, data in pr_data.items():
         else:
             print(f"Unkown state: f{state}")
 
+    prs[number]['title'] = pr['title']
+    prs[number]['author'] = author
     prs[number]['assignee_approved'] = assignee_approved
     prs[number]['approved'] = approved
     prs[number]['blocked'] = blocked
     prs[number]['updated_at'] = pr['updated_at']
-    prs[number]['title'] = pr['title']
 
 for user, data in users.items():
     print(f"")
@@ -75,11 +76,12 @@ for user, data in users.items():
 
 print("")
 for pr, data in prs.items():
-    print("PR %d %d %d %d %s %s" % (
+    print("PR %d %d %d %d %s %s %s" % (
         pr,
         data['assignee_approved'],
         data['approved'],
         data['blocked'],
         data['title'],
         data['updated_at'],
+        data['author'],
         ))
