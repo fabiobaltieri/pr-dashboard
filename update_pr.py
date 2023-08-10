@@ -7,7 +7,7 @@ import time
 
 from dataclasses import dataclass
 
-token = os.environ['GITHUB_TOKEN']
+token = os.environ["GITHUB_TOKEN"]
 
 ORG="zephyrproject-rtos"
 REPO="zephyr"
@@ -18,8 +18,8 @@ pr_list_url = f"https://api.github.com/repos/{ORG}/{REPO}/pulls?state=open&per_p
 pr_base_url = f"https://api.github.com/repos/{ORG}/{REPO}/pulls"
 
 headers = {
-        'Authorization': f'Bearer {token}',
-        'Accept': 'application/vnd.github+json',
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
         }
 
 def fetch_prs():
@@ -36,7 +36,7 @@ def fetch_reviews(number):
     response = requests.get(url, headers=headers)
     reviews = response.json();
 
-    #print(response.headers['X-RateLimit-Remaining'])
+    #print(response.headers["X-RateLimit-Remaining"])
     time.sleep(0.5)
 
     return reviews
@@ -50,7 +50,7 @@ class Stats:
 print(f"Loading previous data from {PR_FILE}")
 
 try:
-    with open(PR_FILE, 'r') as infile:
+    with open(PR_FILE, "r") as infile:
         old_prs = json.load(infile)
         print(f"Old data loaded: {len(old_prs)} PRs")
 except Exception as e:
@@ -65,8 +65,8 @@ page = 1
 while True:
     prs = fetch_prs()
     for pr in prs:
-        number = pr['number']
-        new_prs[number] = {'pr': pr}
+        number = pr["number"]
+        new_prs[number] = {"pr": pr}
 
     if len(prs) < LIMIT:
         break
@@ -82,25 +82,25 @@ for number, data in new_prs.items():
         #print(f"new {number}");
         stats.new += 1
         reviews = fetch_reviews(number)
-        new_prs[number]['reviews'] = reviews
+        new_prs[number]["reviews"] = reviews
         continue
 
     old_data = old_prs[str(number)]
 
-    new_updated_at = data['pr']['updated_at']
-    old_updated_at = old_data['pr']['updated_at']
+    new_updated_at = data["pr"]["updated_at"]
+    old_updated_at = old_data["pr"]["updated_at"]
     if new_updated_at == old_updated_at:
         #print(f"cache {number}");
         stats.cached += 1
-        new_prs[number]['reviews'] = old_data['reviews']
+        new_prs[number]["reviews"] = old_data["reviews"]
         continue
 
     #print(f"update {number}");
     stats.updated += 1
     reviews = fetch_reviews(number)
-    new_prs[number]['reviews'] = reviews
+    new_prs[number]["reviews"] = reviews
 
 print(f"Done, saving to {PR_FILE} {stats}")
 
-with open(PR_FILE, 'w') as outfile:
+with open(PR_FILE, "w") as outfile:
     json.dump(new_prs, outfile)
