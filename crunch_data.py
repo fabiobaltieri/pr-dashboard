@@ -80,6 +80,7 @@ for number, data in pr_data.items():
                 reviewer_names.add(f"+{reviewer_name}")
         elif state == "COMMENTED":
             users[reviewer_name].commented.add(number)
+            reviewer_names.add(reviewer_name)
         elif state == "CHANGES_REQUESTED":
             users[reviewer_name].blocking.add(number)
             if reviewer_name in assignee_names:
