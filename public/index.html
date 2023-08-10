@@ -110,7 +110,7 @@ a.blocked {
 
 	function usersLink(users) {
 		out = []
-		for (const [_, user] of Object.entries(users.sort())) {
+		for (const user of users.sort()) {
 			out.push(userLink(user))
 		}
 		// TODO: CSS should handle this
@@ -123,7 +123,7 @@ a.blocked {
 
 	function appendData(values, table) {
 		const tbody = document.getElementById(table)
-		for (const [_, pr] of Object.entries(values)) {
+		for (const pr of values.sort().reverse()) {
 			const row = tbody.insertRow()
 			const prData = prs[String(pr)]
 
