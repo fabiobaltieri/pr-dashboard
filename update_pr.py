@@ -27,6 +27,7 @@ print(f"Loading previous data from {PR_FILE}")
 try:
     with open(PR_FILE, 'r') as infile:
         old_prs = json.load(infile)
+        print(f"Old data loaded: {len(old_prs)} PRs")
 except Exception as e:
     print(f"Cannot load {PR_FILE}: {e}, starting from empty")
     old_prs = {}
@@ -67,20 +68,32 @@ while True:
 
 print(f"Found {len(new_prs)} open PRs, updating PR details")
 
-for number, data in new_prs.items():
-    if not f"{number}" in old_prs:
-        print(f"new {number}");
-        reviews = fetch_reviews(number)
-        new_prs[number]['reviews'] = reviews
-    elif data['pr']['updated_at'] == old_prs[f"{number}"]['pr']['updated_at']:
-        print(f"cache {number}");
-        new_prs[number]['reviews'] = old_prs[f"{number}"]['reviews']
-    else:
-        print(f"update {number}");
-        reviews = fetch_reviews(number)
-        new_prs[number]['reviews'] = reviews
+stats = {'new': 0, 'cached': 0, 'updated': 0}
 
-print(f"Done, saving to {PR_FILE}")
+for number, data in new_prs.items():
+    if not str(number) in old_prs:
+        #print(f"new {number}");
+        stats['new'] += 1
+        reviews = fetch_reviews(number)
+        new_prs[number]['reviews'] = reviews
+        continue
+
+    old_data = old_prs[str(number)]
+
+    new_updated_at = data['pr']['updated_at']
+    old_updated_at = old_data['pr']['updated_at']
+    if new_updated_at == old_updated_at:
+        #print(f"cache {number}");
+        stats['cached'] += 1
+        new_prs[number]['reviews'] = old_data['reviews']
+        continue
+
+    #print(f"update {number}");
+    stats['updated'] += 1
+    reviews = fetch_reviews(number)
+    new_prs[number]['reviews'] = reviews
+
+print(f"Done, saving to {PR_FILE} {stats}")
 
 with open(PR_FILE, 'w') as outfile:
     json.dump(new_prs, outfile)
