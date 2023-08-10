@@ -4,17 +4,47 @@
 <head>
 <style>
 body {
-  font-family: Arial, Helvetica, sans-serif;
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+a {
+	text-decoration: none;
+	color: #000000;
+}
+
+a:hover {
+	text-decoration: underline;
+	color: #000000;
+}
+
+span.approved {
+	color: #269926
+}
+
+span.blocked {
+	color: #992626
+}
+
+span.none {
+	color: #999999
+}
+
+a.approved {
+	color: #269926
+}
+
+a.blocked {
+	color: #992626
 }
 
 .prs {
-  border-collapse: collapse;
-  width: 100%;
+	border-collapse: collapse;
+	width: 100%;
 }
 
 .prs td, .prs th {
-  border: 1px solid #ddd;
-  padding: 4px;
+	border: 1px solid #ddd;
+	padding: 4px;
 }
 
 .prs tr:nth-child(even){background-color: #f2f2f2;}
@@ -22,55 +52,112 @@ body {
 .prs tr:hover {background-color: #ddd;}
 
 .prs th {
-  padding-top: 4px;
-  padding-bottom: 4px;
-  text-align: left;
-  background-color: #333f67;
-  color: white;
+	padding-top: 4px;
+	padding-bottom: 4px;
+	text-align: left;
+	background-color: #333f67;
+	color: white;
 }
 </style>
 
 <script type="text/javascript">
 	const urlParams = new URLSearchParams(window.location.search);
+	prs = null
 
-	function prLink(pr) {
-		return "<a href='https://github.com/zephyrproject-rtos/zephyr/pull/" + pr + "'>" + pr + "</a>"
+	function approvedCount(count) {
+		linkClass = count ? "approved" : "none"
+		return `<span class="${linkClass}">${count}</a>`
 	}
 
-	function appendData(username, values, table) {
+	function blockedCount(count) {
+		linkClass = count ? "blocked" : "none"
+		return `<span class="${linkClass}">${count}</a>`
+	}
+
+	function prLink(pr, text) {
+		return `<a href="https://github.com/zephyrproject-rtos/zephyr/pull/${pr}">${text}</a>`
+	}
+
+	function userLink(user) {
+		linkClass = ""
+		if (user.startsWith("+")) {
+			linkClass = "approved"
+			user = user.substring(1)
+		}
+		if (user.startsWith("-")) {
+			linkClass = "blocked"
+			user = user.substring(1)
+		}
+
+		return `<a class="${linkClass}" href="https://github.com/${user}">${user}</a>`
+	}
+
+	function usersLink(users) {
+		out = []
+		for (const [_, user] of Object.entries(users.sort())) {
+			out.push(userLink(user))
+		}
+		// TODO: CSS should handle this
+		if (out.length > 4) {
+			out = out.slice(0, 4)
+			out.push("...")
+		}
+		return out.join(", ")
+	}
+
+	function appendData(values, table) {
 		const tbody = document.getElementById(table)
 		for (const [_, pr] of Object.entries(values)) {
-			const row = tbody.insertRow(-1)
-			const cell = row.insertCell(0)
-			cell.innerHTML = prLink(pr)
+			const row = tbody.insertRow()
+			const prData = prs[String(pr)]
+
+			row.insertCell().innerHTML = prLink(pr, "#" + pr)
+
+			if (prData === undefined) {
+				row.insertCell().innerHTML = "-- missing PR data --"
+				continue
+			}
+
+			row.insertCell().innerHTML = prLink(pr, prData.title)
+			row.insertCell().innerHTML = userLink(prData.author)
+			row.insertCell().innerHTML = usersLink(prData.assignee_names)
+			row.insertCell().innerHTML = usersLink(prData.reviewer_names)
+			row.insertCell().innerHTML = prData.base
+			row.insertCell().innerHTML = prData.updated_at
+			row.insertCell().innerHTML = approvedCount(prData.assignee_approved)
+			row.insertCell().innerHTML = approvedCount(prData.approved)
+			row.insertCell().innerHTML = blockedCount(prData.blocked)
 		}
 	}
 
-	function appendUser(username, values) {
-		appendData(username, values.blocking, "blocking")
-		appendData(username, values.assignee, "assignee")
-		appendData(username, values.reviewer, "reviewer")
-		appendData(username, values.approved, "approved")
-		appendData(username, values.commented, "commented")
-		appendData(username, values.author, "author")
+	function appendUser(values) {
+		appendData(values.author, "author")
+		appendData(values.blocking, "blocking")
+		appendData(values.assignee, "assignee")
+		appendData(values.reviewer, "reviewer")
+		appendData(values.approved, "approved")
+		appendData(values.commented, "commented")
 	}
 
-	function appendUsers(data) {
-		for (const [username, values] of Object.entries(data)) {
+	function processData(data) {
+		self.prs = data[0]
+		users = data[1]
+		for (const [username, values] of Object.entries(users)) {
 			if (urlParams.get("username") == username) {
-				appendUser(username, values)
+				appendUser(values)
 			}
 		}
 	}
 
-	function loadUsers() {
-		fetch("users.json").
-			then(response => response.json()).
-			then(response => appendUsers(response))
-	}
-
 	window.addEventListener("load", (event) => {
-		loadUsers()
+		const urls = ["prs.json", "users.json"]
+
+		Promise.all(
+			urls.map(url =>
+				 fetch(url).then(res => res.json())
+			)
+		).then(res => processData(res))
+
 	})
 </script>
 </head>
@@ -81,7 +168,9 @@ body {
 
 <table class="prs" id="author">
   <tr>
-    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th><th>Branch</th><th>Waiting</th><th>A</th><th>R</th><th>V</th>
+    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
+    <th>Branch</th><th>Waiting</th>
+    <th>&check;</th><th>+</th><th>&#10005;</th>
   </tr>
 </table>
 
@@ -89,7 +178,9 @@ body {
 
 <table class="prs" id="blocking">
   <tr>
-    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th><th>Branch</th><th>Waiting</th><th>A</th><th>R</th><th>V</th>
+    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
+    <th>Branch</th><th>Waiting</th>
+    <th>&check;</th><th>+</th><th>&#10005;</th>
   </tr>
 </table>
 
@@ -97,7 +188,9 @@ body {
 
 <table class="prs" id="assignee">
   <tr>
-    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th><th>Branch</th><th>Waiting</th><th>A</th><th>R</th><th>V</th>
+    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
+    <th>Branch</th><th>Waiting</th>
+    <th>&check;</th><th>+</th><th>&#10005;</th>
   </tr>
 </table>
 
@@ -105,7 +198,9 @@ body {
 
 <table class="prs" id="reviewer">
   <tr>
-    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th><th>Branch</th><th>Waiting</th><th>A</th><th>R</th><th>V</th>
+    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
+    <th>Branch</th><th>Waiting</th>
+    <th>&check;</th><th>+</th><th>&#10005;</th>
   </tr>
 </table>
 
@@ -113,7 +208,9 @@ body {
 
 <table class="prs" id="approved">
   <tr>
-    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th><th>Branch</th><th>Waiting</th><th>A</th><th>R</th><th>V</th>
+    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
+    <th>Branch</th><th>Waiting</th>
+    <th>&check;</th><th>+</th><th>&#10005;</th>
   </tr>
 </table>
 
@@ -121,7 +218,9 @@ body {
 
 <table class="prs" id="commented">
   <tr>
-    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th><th>Branch</th><th>Waiting</th><th>A</th><th>R</th><th>V</th>
+    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
+    <th>Branch</th><th>Waiting</th>
+    <th>&check;</th><th>+</th><th>&#10005;</th>
   </tr>
 </table>
 
