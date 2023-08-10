@@ -64,6 +64,22 @@ a.blocked {
 	const urlParams = new URLSearchParams(window.location.search);
 	prs = null
 
+	function timeSince(timestamp) {
+		const d = Date.parse(timestamp)
+		const delta_ms = Date.now() - d
+
+		const minutes = delta_ms / 1000 / 60
+		const hours = minutes / 60
+		const days = hours / 24
+
+		if (minutes < 60)
+			return Math.round(minutes) + " mins"
+		else if (hours < 24)
+			return Math.round(hours) + " hours"
+		else
+			return Math.round(days) + " days"
+	}
+
 	function approvedCount(count) {
 		linkClass = count ? "approved" : "none"
 		return `<span class="${linkClass}">${count}</a>`
@@ -123,7 +139,7 @@ a.blocked {
 			row.insertCell().innerHTML = usersLink(prData.assignee_names)
 			row.insertCell().innerHTML = usersLink(prData.reviewer_names)
 			row.insertCell().innerHTML = prData.base
-			row.insertCell().innerHTML = prData.updated_at
+			row.insertCell().innerHTML = timeSince(prData.updated_at)
 			row.insertCell().innerHTML = approvedCount(prData.assignee_approved)
 			row.insertCell().innerHTML = approvedCount(prData.approved)
 			row.insertCell().innerHTML = blockedCount(prData.blocked)
