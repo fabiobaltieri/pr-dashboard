@@ -66,15 +66,17 @@ for number, data in pr_data.items():
         else:
             print(f"Unkown state: f{state}")
 
-    prs[number]['title'] = pr['title']
-    prs[number]['author'] = author
-    prs[number]['base'] = pr['base']['ref']
-    prs[number]['assignee_names'] = assignee_names
-    prs[number]['reviewer_names'] = reviewer_names
-    prs[number]['assignee_approved'] = assignee_approved
-    prs[number]['approved'] = approved
-    prs[number]['blocked'] = blocked
-    prs[number]['updated_at'] = pr['updated_at']
+    prs[number] = {
+            'title': pr['title'],
+            'author': author,
+            'base': pr['base']['ref'],
+            'assignee_names': assignee_names,
+            'reviewer_names': reviewer_names,
+            'assignee_approved': assignee_approved,
+            'approved': approved,
+            'blocked': blocked,
+            'updated_at': pr['updated_at'],
+            }
 
 for user, data in users.items():
     print(f"")
