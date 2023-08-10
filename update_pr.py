@@ -12,7 +12,7 @@ token = os.environ["GITHUB_TOKEN"]
 ORG="zephyrproject-rtos"
 REPO="zephyr"
 LIMIT=100
-PR_FILE="prs.json"
+PR_FILE="cache/prs.json"
 
 pr_list_url = f"https://api.github.com/repos/{ORG}/{REPO}/pulls?state=open&per_page={LIMIT}"
 pr_base_url = f"https://api.github.com/repos/{ORG}/{REPO}/pulls"
@@ -101,6 +101,9 @@ for number, data in new_prs.items():
     new_prs[number]["reviews"] = reviews
 
 print(f"Done, saving to {PR_FILE} {stats}")
+
+if not os.path.exists("cache"):
+    os.mkdir("cache");
 
 with open(PR_FILE, "w") as outfile:
     json.dump(new_prs, outfile)

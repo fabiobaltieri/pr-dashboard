@@ -6,7 +6,7 @@ import os
 from dataclasses import dataclass, field, fields
 
 OUTDIR="public"
-INFILE="prs.json"
+INFILE="cache/prs.json"
 
 @dataclass
 class User:
