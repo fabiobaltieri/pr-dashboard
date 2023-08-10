@@ -29,7 +29,13 @@ jobs:
       - name: Update
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./update_pr.py
+        run: |
+          ./update_pr.py
+          bzip2 -c cache/prs.json > public/raw-prs.json.bz2
+
+      - name: Crunch
+        run: |
+          ./crunch_data.py
 
       - name: Setup pages
         uses: actions/configure-pages@v3
