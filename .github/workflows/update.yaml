@@ -21,12 +21,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Cache PR data
-        id: cache-data
-        uses: actions/cache@v3
-        with:
-          path: cache
-          key: pr-data
+      - name: Fetch last run data
+        continue-on-error: true
+        run: |
+          mkdir cache
+          wget --progress=dot https://fabiobaltieri.github.io/pr-dashboard/raw-prs.json.bz2 -O cache/prs.json.bz2
+          bunzip2 cache/prs.json.bz2
 
       - name: Update
         env:
