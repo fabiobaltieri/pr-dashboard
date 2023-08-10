@@ -3,18 +3,37 @@
 from collections import defaultdict
 import json
 import os
+from dataclasses import dataclass, field, fields
 
 OUTDIR="public"
 INFILE="prs.json"
 
-users = defaultdict(lambda: defaultdict(set))
-prs = {}
+@dataclass
+class User:
+    author: str = field(default_factory=set)
+    assignee: set = field(default_factory=set)
+    blocking: set = field(default_factory=set)
+    approved: set = field(default_factory=set)
+    reviewer: set = field(default_factory=set)
+    commented: set = field(default_factory=set)
+    dismissed: set = field(default_factory=set)
+
+    def toJSON(self):
+        out = {}
+        for f in fields(self):
+            out[f.name] = getattr(self, f.name)
+        return out
 
 class Encoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, set):
             return list(obj)
+        if isinstance(obj, User):
+            return obj.toJSON()
         return json.JSONEncoder.default(self, obj)
+
+users = defaultdict(User)
+prs = {}
 
 with open(INFILE, "r") as infile:
     pr_data = json.load(infile)
@@ -25,7 +44,7 @@ for number, data in pr_data.items():
     reviews = data["reviews"]
 
     author = pr["user"]["login"]
-    users[author]["author"].add(number)
+    users[author].author.add(number)
 
     assignee_names = set([])
     reviewer_names = set([])
@@ -35,12 +54,12 @@ for number, data in pr_data.items():
 
     for assignee in pr["assignees"]:
         assignee_name = assignee["login"]
-        users[assignee_name]["assignee"].add(number)
+        users[assignee_name].assignee.add(number)
         assignee_names.add(assignee_name)
 
     for reviewer in pr["requested_reviewers"]:
         reviewer_name = reviewer["login"]
-        users[reviewer_name]["reviewer"].add(number)
+        users[reviewer_name].reviewer.add(number)
         reviewer_names.add(reviewer_name)
 
     final_review = defaultdict(str)
@@ -51,7 +70,7 @@ for number, data in pr_data.items():
 
     for reviewer_name, state in final_review.items():
         if state == "APPROVED":
-            users[reviewer_name]["approved"].add(number)
+            users[reviewer_name].approved.add(number)
             if reviewer_name in assignee_names:
                 assignee_approved += 1
                 assignee_names.remove(reviewer_name)
@@ -60,9 +79,9 @@ for number, data in pr_data.items():
                 approved += 1
                 reviewer_names.add(f"+{reviewer_name}")
         elif state == "COMMENTED":
-            users[reviewer_name]["commented"].add(number)
+            users[reviewer_name].commented.add(number)
         elif state == "CHANGES_REQUESTED":
-            users[reviewer_name]["blocking"].add(number)
+            users[reviewer_name].blocking.add(number)
             if reviewer_name in assignee_names:
                 assignee_names.remove(reviewer_name)
                 assignee_names.add(f"-{reviewer_name}")
@@ -70,7 +89,7 @@ for number, data in pr_data.items():
                 reviewer_names.add(f"-{reviewer_name}")
             blocked += 1
         elif state == "DISMISSED":
-            users[reviewer_name]["dismissed"].add(number)
+            users[reviewer_name].dismissed.add(number)
         else:
             print(f"Unkown state: f{state}")
 
@@ -89,13 +108,13 @@ for number, data in pr_data.items():
 for user, data in users.items():
     print(f"")
     print(f"#### user: {user}")
-    print(f"blocking {data['blocking']}")
-    print(f"assignee {data['assignee']}")
-    print(f"reviewer {data['reviewer']}")
-    print(f"commented {data['commented']}")
-    print(f"approved {data['approved']}")
-    print(f"dismissed {data['dismissed']}")
-    print(f"author {data['author']}")
+    print(f"blocking {data.blocking}")
+    print(f"assignee {data.assignee}")
+    print(f"reviewer {data.reviewer}")
+    print(f"commented {data.commented}")
+    print(f"approved {data.approved}")
+    print(f"dismissed {data.dismissed}")
+    print(f"author {data.author}")
 
 print("")
 for pr, data in prs.items():
