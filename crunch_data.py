@@ -10,7 +10,7 @@ INFILE="cache/prs.json"
 
 @dataclass
 class User:
-    author: str = field(default_factory=set)
+    author: set = field(default_factory=set)
     assignee: set = field(default_factory=set)
     blocking: set = field(default_factory=set)
     approved: set = field(default_factory=set)
