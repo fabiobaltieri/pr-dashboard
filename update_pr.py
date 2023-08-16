@@ -74,6 +74,8 @@ def fetch_reviews(number):
     return reviews
 
 def load_old_prs():
+    print(f"Loading previous data from {PR_FILE}")
+
     try:
         with open(PR_FILE, "r") as infile:
             out = json.load(infile)
@@ -91,6 +93,8 @@ def save_new_prs(data):
         json.dump(data, outfile)
 
 def fetch_new_prs():
+    print(f"Fetching all open PR summary")
+
     prs = fetch_prs()
 
     out = {}
@@ -98,19 +102,15 @@ def fetch_new_prs():
         number = pr["number"]
         out[number] = {"pr": pr}
 
+    print(f"Found {len(out)} open PRs")
+
     return out
 
 def main(argv):
-    print(f"Loading previous data from {PR_FILE}")
-
-    old_prs = load_old_prs()
-
     print_rate_limit()
 
-    print(f"Fetching all open PR summary")
-
+    old_prs = load_old_prs()
     new_prs = fetch_new_prs()
-    print(f"Found {len(new_prs)} open PRs, updating PR details")
 
     stats = Stats()
     for number, data in new_prs.items():
@@ -134,9 +134,9 @@ def main(argv):
         stats.updated += 1
         new_prs[number]["reviews"] = fetch_reviews(number)
 
+    print(stats)
     print_rate_limit()
 
-    print(f"Done, saving to {PR_FILE} {stats}")
     save_new_prs(new_prs)
 
 if __name__ == "__main__":
