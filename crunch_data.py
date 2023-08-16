@@ -18,6 +18,7 @@ class User:
     reviewer: set = field(default_factory=set)
     commented: set = field(default_factory=set)
     dismissed: set = field(default_factory=set)
+    last_action: dict = field(default_factory=dict)
 
     def toJSON(self):
         out = {}
@@ -86,10 +87,12 @@ def main(argv):
         final_review = defaultdict(str)
         for review in reviews:
             reviewer_name = review["user"]["login"]
-            state = review["state"]
-            final_review[reviewer_name] = state
+            final_review[reviewer_name] = review
 
-        for reviewer_name, state in final_review.items():
+        for reviewer_name, review in final_review.items():
+            state = review["state"]
+            updated_at = review["submitted_at"]
+            users[reviewer_name].last_action[number] = review["submitted_at"]
             if state == "APPROVED":
                 users[reviewer_name].approved.add(number)
                 if reviewer_name in pr.assignee_names:

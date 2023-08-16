@@ -122,11 +122,14 @@ a.blocked {
 		return out.join(", ")
 	}
 
-	function appendData(values, table) {
+	function appendData(values, table, last_action) {
 		const tbody = document.getElementById(table)
 		for (const pr of values.sort().reverse()) {
 			const row = tbody.insertRow()
 			const prData = prs[String(pr)]
+			const lastAction = last_action[String(pr)]
+
+			// TODO: do something with lastAction
 
 			row.insertCell().innerHTML = prLink(pr, "#" + pr)
 
@@ -148,12 +151,12 @@ a.blocked {
 	}
 
 	function appendUser(values) {
-		appendData(values.author, "author")
-		appendData(values.blocking, "blocking")
-		appendData(values.assignee, "assignee")
-		appendData(values.reviewer, "reviewer")
-		appendData(values.approved, "approved")
-		appendData(values.commented, "commented")
+		appendData(values.author, "author", values.last_action)
+		appendData(values.blocking, "blocking", values.last_action)
+		appendData(values.assignee, "assignee", values.last_action)
+		appendData(values.reviewer, "reviewer", values.last_action)
+		appendData(values.approved, "approved", values.last_action)
+		appendData(values.commented, "commented", values.last_action)
 	}
 
 	function processData(data) {
