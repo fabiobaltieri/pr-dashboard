@@ -3,6 +3,7 @@
 import json
 import os
 import requests
+import sys
 import time
 
 from dataclasses import dataclass
@@ -21,6 +22,12 @@ headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
         }
+
+@dataclass
+class Stats:
+    new: int = 0
+    cached: int = 0
+    updated: int = 0
 
 def print_rate_limit():
     response = requests.get("https://api.github.com/users/octocat/orgs", headers=headers)
@@ -66,64 +73,71 @@ def fetch_reviews(number):
 
     return reviews
 
-@dataclass
-class Stats:
-    new: int = 0
-    cached: int = 0
-    updated: int = 0
+def load_old_prs():
+    try:
+        with open(PR_FILE, "r") as infile:
+            out = json.load(infile)
+            print(f"Old data loaded: {len(out)} PRs")
+            return out
+    except Exception as e:
+        print(f"Cannot load {PR_FILE}: {e}, starting from empty")
+        return {}
 
-print(f"Loading previous data from {PR_FILE}")
+def save_new_prs(data):
+    if not os.path.exists("cache"):
+        os.mkdir("cache");
 
-try:
-    with open(PR_FILE, "r") as infile:
-        old_prs = json.load(infile)
-        print(f"Old data loaded: {len(old_prs)} PRs")
-except Exception as e:
-    print(f"Cannot load {PR_FILE}: {e}, starting from empty")
-    old_prs = {}
+    with open(PR_FILE, "w") as outfile:
+        json.dump(data, outfile)
 
-print(f"Fetching all open PR summary")
-print_rate_limit()
+def fetch_new_prs():
+    prs = fetch_prs()
 
-new_prs = {}
+    out = {}
+    for pr in prs:
+        number = pr["number"]
+        out[number] = {"pr": pr}
 
-prs = fetch_prs()
-for pr in prs:
-    number = pr["number"]
-    new_prs[number] = {"pr": pr}
+    return out
 
-print(f"Found {len(new_prs)} open PRs, updating PR details")
+def main(argv):
+    print(f"Loading previous data from {PR_FILE}")
 
-stats = Stats()
+    old_prs = load_old_prs()
 
-for number, data in new_prs.items():
-    if not str(number) in old_prs:
-        #print(f"new {number}");
-        stats.new += 1
-        reviews = fetch_reviews(number)
-        new_prs[number]["reviews"] = reviews
-        continue
+    print_rate_limit()
 
-    old_data = old_prs[str(number)]
+    print(f"Fetching all open PR summary")
 
-    new_updated_at = data["pr"]["updated_at"]
-    old_updated_at = old_data["pr"]["updated_at"]
-    if new_updated_at == old_updated_at:
-        #print(f"cache {number}");
-        stats.cached += 1
-        new_prs[number]["reviews"] = old_data["reviews"]
-        continue
+    new_prs = fetch_new_prs()
+    print(f"Found {len(new_prs)} open PRs, updating PR details")
 
-    #print(f"update {number}");
-    stats.updated += 1
-    reviews = fetch_reviews(number)
-    new_prs[number]["reviews"] = reviews
+    stats = Stats()
+    for number, data in new_prs.items():
+        if not str(number) in old_prs:
+            #print(f"new {number}");
+            stats.new += 1
+            new_prs[number]["reviews"] = fetch_reviews(number)
+            continue
 
-print_rate_limit()
-print(f"Done, saving to {PR_FILE} {stats}")
+        old_data = old_prs[str(number)]
 
-if not os.path.exists("cache"):
-    os.mkdir("cache");
+        new_updated_at = data["pr"]["updated_at"]
+        old_updated_at = old_data["pr"]["updated_at"]
+        if new_updated_at == old_updated_at:
+            #print(f"cache {number}");
+            stats.cached += 1
+            new_prs[number]["reviews"] = old_data["reviews"]
+            continue
 
-with open(PR_FILE, "w") as outfile:
-    json.dump(new_prs, outfile)
+        #print(f"update {number}");
+        stats.updated += 1
+        new_prs[number]["reviews"] = fetch_reviews(number)
+
+    print_rate_limit()
+
+    print(f"Done, saving to {PR_FILE} {stats}")
+    save_new_prs(new_prs)
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
