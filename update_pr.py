@@ -22,6 +22,12 @@ headers = {
         "Accept": "application/vnd.github+json",
         }
 
+def print_rate_limit():
+    response = requests.get("https://api.github.com/users/octocat/orgs", headers=headers)
+    for header, value in response.headers.items():
+        if header.startswith("X-RateLimit"):
+            print(f"{header}: {value}")
+
 def fetch_prs():
     page = 1
     prs = []
@@ -67,6 +73,7 @@ except Exception as e:
     old_prs = {}
 
 print(f"Fetching all open PR summary")
+print_rate_limit()
 
 new_prs = {}
 
@@ -102,6 +109,7 @@ for number, data in new_prs.items():
     reviews = fetch_reviews(number)
     new_prs[number]["reviews"] = reviews
 
+print_rate_limit()
 print(f"Done, saving to {PR_FILE} {stats}")
 
 if not os.path.exists("cache"):
