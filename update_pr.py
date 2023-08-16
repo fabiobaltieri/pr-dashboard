@@ -43,16 +43,26 @@ def fetch_prs():
             break
 
         page += 1
+
     return prs
 
 def fetch_reviews(number):
-    url = f"{pr_base_url}/{number}/reviews"
-    print(url)
-    response = requests.get(url, headers=headers)
-    reviews = response.json();
+    page = 1
+    reviews = []
 
-    #print(response.headers["X-RateLimit-Remaining"])
-    time.sleep(0.5)
+    while True:
+        url = f"{pr_base_url}/{number}/reviews?per_page={LIMIT}&page={page}"
+        print(url)
+        response = requests.get(url, headers=headers)
+        resp_reviews = response.json()
+        reviews.extend(resp_reviews)
+
+        if len(resp_reviews) < LIMIT:
+            break
+
+        page += 1
+
+        time.sleep(0.5)
 
     return reviews
 
