@@ -23,11 +23,20 @@ headers = {
         }
 
 def fetch_prs():
-    url = f"{pr_list_url}&page={page}"
-    print(url)
-    response = requests.get(url, headers=headers)
-    prs = response.json();
+    page = 1
+    prs = []
 
+    while True:
+        url = f"{pr_list_url}&page={page}"
+        print(url)
+        response = requests.get(url, headers=headers)
+        resp_prs = response.json()
+        prs.extend(resp_prs);
+
+        if len(resp_prs) < LIMIT:
+            break
+
+        page += 1
     return prs
 
 def fetch_reviews(number):
@@ -61,17 +70,10 @@ print(f"Fetching all open PR summary")
 
 new_prs = {}
 
-page = 1
-while True:
-    prs = fetch_prs()
-    for pr in prs:
-        number = pr["number"]
-        new_prs[number] = {"pr": pr}
-
-    if len(prs) < LIMIT:
-        break
-
-    page += 1
+prs = fetch_prs()
+for pr in prs:
+    number = pr["number"]
+    new_prs[number] = {"pr": pr}
 
 print(f"Found {len(new_prs)} open PRs, updating PR details")
 
