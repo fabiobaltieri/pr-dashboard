@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 from collections import defaultdict
+from dataclasses import dataclass, field, fields
 import json
 import os
-from dataclasses import dataclass, field, fields
+import sys
 
 OUTDIR="public"
 INFILE="cache/prs.json"
@@ -52,82 +53,85 @@ class Encoder(json.JSONEncoder):
             return obj.toJSON()
         return json.JSONEncoder.default(self, obj)
 
-users = defaultdict(User)
-prs = {}
+def main(argv):
+    users = defaultdict(User)
+    prs = {}
 
-with open(INFILE, "r") as infile:
-    pr_dump = json.load(infile)
+    with open(INFILE, "r") as infile:
+        pr_dump = json.load(infile)
 
-for number, data in pr_dump.items():
-    number = int(number)
-    pr_data = data["pr"]
-    reviews = data["reviews"]
+    for number, data in pr_dump.items():
+        number = int(number)
+        pr_data = data["pr"]
+        reviews = data["reviews"]
 
-    pr = PR()
-    pr.title = pr_data["title"]
-    pr.author = pr_data["user"]["login"]
-    pr.base = pr_data["base"]["ref"],
-    pr.updated_at = pr_data["updated_at"]
+        pr = PR()
+        pr.title = pr_data["title"]
+        pr.author = pr_data["user"]["login"]
+        pr.base = pr_data["base"]["ref"],
+        pr.updated_at = pr_data["updated_at"]
 
-    users[pr.author].author.add(number)
+        users[pr.author].author.add(number)
 
-    for assignee in pr_data["assignees"]:
-        assignee_name = assignee["login"]
-        users[assignee_name].assignee.add(number)
-        pr.assignee_names.add(assignee_name)
+        for assignee in pr_data["assignees"]:
+            assignee_name = assignee["login"]
+            users[assignee_name].assignee.add(number)
+            pr.assignee_names.add(assignee_name)
 
-    for reviewer in pr_data["requested_reviewers"]:
-        reviewer_name = reviewer["login"]
-        users[reviewer_name].reviewer.add(number)
-        pr.reviewer_names.add(reviewer_name)
-
-    final_review = defaultdict(str)
-    for review in reviews:
-        reviewer_name = review["user"]["login"]
-        state = review["state"]
-        final_review[reviewer_name] = state
-
-    for reviewer_name, state in final_review.items():
-        if state == "APPROVED":
-            users[reviewer_name].approved.add(number)
-            if reviewer_name in pr.assignee_names:
-                pr.assignee_approved += 1
-                pr.assignee_names.remove(reviewer_name)
-                pr.assignee_names.add(f"+{reviewer_name}")
-            else:
-                pr.approved += 1
-                pr.reviewer_names.add(f"+{reviewer_name}")
-        elif state == "COMMENTED":
-            users[reviewer_name].commented.add(number)
+        for reviewer in pr_data["requested_reviewers"]:
+            reviewer_name = reviewer["login"]
+            users[reviewer_name].reviewer.add(number)
             pr.reviewer_names.add(reviewer_name)
-        elif state == "CHANGES_REQUESTED":
-            users[reviewer_name].blocking.add(number)
-            if reviewer_name in pr.assignee_names:
-                pr.assignee_names.remove(reviewer_name)
-                pr.assignee_names.add(f"-{reviewer_name}")
+
+        final_review = defaultdict(str)
+        for review in reviews:
+            reviewer_name = review["user"]["login"]
+            state = review["state"]
+            final_review[reviewer_name] = state
+
+        for reviewer_name, state in final_review.items():
+            if state == "APPROVED":
+                users[reviewer_name].approved.add(number)
+                if reviewer_name in pr.assignee_names:
+                    pr.assignee_approved += 1
+                    pr.assignee_names.remove(reviewer_name)
+                    pr.assignee_names.add(f"+{reviewer_name}")
+                else:
+                    pr.approved += 1
+                    pr.reviewer_names.add(f"+{reviewer_name}")
+            elif state == "COMMENTED":
+                users[reviewer_name].commented.add(number)
+                pr.reviewer_names.add(reviewer_name)
+            elif state == "CHANGES_REQUESTED":
+                users[reviewer_name].blocking.add(number)
+                if reviewer_name in pr.assignee_names:
+                    pr.assignee_names.remove(reviewer_name)
+                    pr.assignee_names.add(f"-{reviewer_name}")
+                else:
+                    pr.reviewer_names.add(f"-{reviewer_name}")
+                pr.blocked += 1
+            elif state == "DISMISSED":
+                users[reviewer_name].dismissed.add(number)
             else:
-                pr.reviewer_names.add(f"-{reviewer_name}")
-            pr.blocked += 1
-        elif state == "DISMISSED":
-            users[reviewer_name].dismissed.add(number)
-        else:
-            print(f"Unkown state: f{state}")
+                print(f"Unkown state: f{state}")
 
-    prs[number] = pr
+        prs[number] = pr
 
-for user, data in users.items():
-    print(f"{user} {data}")
+    for user, data in users.items():
+        print(f"{user} {data}")
 
-print("")
-for pr, data in prs.items():
-    print(f"PR {pr} {data}")
+    print("")
+    for pr, data in prs.items():
+        print(f"PR {pr} {data}")
 
-if not os.path.exists(OUTDIR):
-    os.mkdir(OUTDIR);
+    if not os.path.exists(OUTDIR):
+        os.mkdir(OUTDIR);
 
-with open(f"{OUTDIR}/users.json", "w") as outfile:
-    json.dump(users, outfile, cls=Encoder)
+    with open(f"{OUTDIR}/users.json", "w") as outfile:
+        json.dump(users, outfile, cls=Encoder)
 
-with open(f"{OUTDIR}/prs.json", "w") as outfile:
-    json.dump(prs, outfile, cls=Encoder)
+    with open(f"{OUTDIR}/prs.json", "w") as outfile:
+        json.dump(prs, outfile, cls=Encoder)
 
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
