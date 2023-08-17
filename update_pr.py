@@ -85,7 +85,7 @@ def main(argv):
         if not str(number) in old_data:
             print(f"new {number}");
             stats.new += 1
-            pr = pr_issues[number].as_pull_request()
+            pr = pr_issue.as_pull_request()
             new_data[number]["pr"] = pr.raw_data
             new_data[number]["reviews"] = fetch_reviews(pr)
             continue
@@ -102,7 +102,7 @@ def main(argv):
 
         print(f"update {number}");
         stats.updated += 1
-        pr = pr_issues[number].as_pull_request()
+        pr = pr_issue.as_pull_request()
         new_data[number]["pr"] = pr.raw_data
         new_data[number]["reviews"] = fetch_reviews(pr)
 
