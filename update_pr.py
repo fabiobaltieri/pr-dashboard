@@ -75,6 +75,10 @@ def main(argv):
     new_data = {}
     stats = Stats()
     for number, pr_issue in pr_issues.items():
+        if stats.new + stats.updated > BOOTSTRAP_LIMIT:
+            print("bootstrap limit hit")
+            break
+
         new_updated_at = pr_issue.updated_at.timestamp()
         new_data[number] = {"updated_at": new_updated_at}
 
@@ -101,10 +105,6 @@ def main(argv):
         pr = pr_issues[number].as_pull_request()
         new_data[number]["pr"] = pr.raw_data
         new_data[number]["reviews"] = fetch_reviews(pr)
-
-        if stats.new + stats.updated > BOOTSTRAP_LIMIT:
-            print("bootstrap limit hit")
-            break
 
     print(stats)
     print_rate_limit(gh)
