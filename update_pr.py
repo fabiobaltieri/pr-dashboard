@@ -2,9 +2,8 @@
 
 import json
 import os
-import requests
 import sys
-import time
+from github import Github, GithubException
 
 from dataclasses import dataclass
 
@@ -12,16 +11,10 @@ token = os.environ["GITHUB_TOKEN"]
 
 ORG="zephyrproject-rtos"
 REPO="zephyr"
-LIMIT=100
-PR_FILE="cache/prs.json"
+PER_PAGE=100
+DATA_FILE="cache/data_dump.json"
 
-pr_list_url = f"https://api.github.com/repos/{ORG}/{REPO}/pulls?state=open&per_page={LIMIT}"
-pr_base_url = f"https://api.github.com/repos/{ORG}/{REPO}/pulls"
-
-headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github+json",
-        }
+pr_list_query = f"is:pr is:open repo:{ORG}/{REPO}"
 
 @dataclass
 class Stats:
@@ -29,115 +22,91 @@ class Stats:
     cached: int = 0
     updated: int = 0
 
-def print_rate_limit():
-    response = requests.get("https://api.github.com/users/octocat/orgs", headers=headers)
-    for header, value in response.headers.items():
-        if header.startswith("X-RateLimit"):
+def print_rate_limit(gh):
+    response = gh.get_organization(ORG)
+    for header, value in response.raw_headers.items():
+        if header.startswith("x-ratelimit"):
             print(f"{header}: {value}")
 
-def fetch_prs():
-    page = 1
-    prs = []
+def fetch_pr_issues(gh):
+    pr_issues = {}
+    issues = gh.search_issues(query=pr_list_query)
+    for issue in issues:
+        print(f"Found {issue.repository} {issue.number}")
+        pr_issues[issue.number] = issue
+    return pr_issues
 
-    while True:
-        url = f"{pr_list_url}&page={page}"
-        print(url)
-        response = requests.get(url, headers=headers)
-        resp_prs = response.json()
-        prs.extend(resp_prs);
 
-        if len(resp_prs) < LIMIT:
-            break
-
-        page += 1
-
-    return prs
-
-def fetch_reviews(number):
-    page = 1
+def fetch_reviews(pr):
     reviews = []
-
-    while True:
-        url = f"{pr_base_url}/{number}/reviews?per_page={LIMIT}&page={page}"
-        print(url)
-        response = requests.get(url, headers=headers)
-        resp_reviews = response.json()
-        reviews.extend(resp_reviews)
-
-        if len(resp_reviews) < LIMIT:
-            break
-
-        page += 1
-
-        time.sleep(0.5)
-
+    review_data = pr.get_reviews()
+    for review in review_data:
+        reviews.append(review.raw_data)
     return reviews
 
 def load_old_prs():
-    print(f"Loading previous data from {PR_FILE}")
+    print(f"Loading previous data from {DATA_FILE}")
 
     try:
-        with open(PR_FILE, "r") as infile:
+        with open(DATA_FILE, "r") as infile:
             out = json.load(infile)
             print(f"Old data loaded: {len(out)} PRs")
             return out
     except Exception as e:
-        print(f"Cannot load {PR_FILE}: {e}, starting from empty")
+        print(f"Cannot load {DATA_FILE}: {e}, starting from empty")
         return {}
 
 def save_new_prs(data):
     if not os.path.exists("cache"):
         os.mkdir("cache");
 
-    with open(PR_FILE, "w") as outfile:
+    with open(DATA_FILE, "w") as outfile:
         json.dump(data, outfile)
 
-def fetch_new_prs():
-    print(f"Fetching all open PR summary")
-
-    prs = fetch_prs()
-
-    out = {}
-    for pr in prs:
-        number = pr["number"]
-        out[number] = {"pr": pr}
-
-    print(f"Found {len(out)} open PRs")
-
-    return out
-
 def main(argv):
-    print_rate_limit()
+    token = os.environ.get('GITHUB_TOKEN', None)
+    gh = Github(token, per_page=PER_PAGE)
 
-    old_prs = load_old_prs()
-    new_prs = fetch_new_prs()
+    print_rate_limit(gh)
+
+    old_data = load_old_prs()
+    pr_issues = fetch_pr_issues(gh)
+
+    new_data = {}
+    for number, pr_issue in pr_issues.items():
+        new_data[number] = {"pr_issue": pr_issue.raw_data}
 
     stats = Stats()
-    for number, data in new_prs.items():
-        if not str(number) in old_prs:
-            #print(f"new {number}");
+    for number, data in new_data.items():
+        if not str(number) in old_data:
+            print(f"new {number}");
             stats.new += 1
-            new_prs[number]["reviews"] = fetch_reviews(number)
+            pr = pr_issues[number].as_pull_request()
+            new_data[number]["pr"] = pr.raw_data
+            new_data[number]["reviews"] = fetch_reviews(pr)
             continue
 
-        old_data = old_prs[str(number)]
+        old_data_entry = old_data[str(number)]
 
-        new_updated_at = data["pr"]["updated_at"]
-        old_updated_at = old_data["pr"]["updated_at"]
+        new_updated_at = data["pr_issue"]["updated_at"]
+        old_updated_at = old_data_entry["pr_issue"]["updated_at"]
         if new_updated_at == old_updated_at:
-            #print(f"cache {number}");
+            print(f"cache {number}");
             stats.cached += 1
-            new_prs[number]["reviews"] = old_data["reviews"]
+            new_data[number]["pr"] = old_data_entry["pr"]
+            new_data[number]["reviews"] = old_data_entry["reviews"]
             continue
 
-        #print(f"update {number}");
+        print(f"update {number}");
         stats.updated += 1
-        new_prs[number]["reviews"] = fetch_reviews(number)
+        pr = pr_issues[number].as_pull_request()
+        new_data[number]["pr"] = pr.raw_data
+        new_data[number]["reviews"] = fetch_reviews(pr)
 
     print(stats)
-    print_rate_limit()
+    print_rate_limit(gh)
 
-    save_new_prs(new_prs)
+    save_new_prs(new_data)
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

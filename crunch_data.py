@@ -7,7 +7,7 @@ import os
 import sys
 
 OUTDIR="public"
-INFILE="cache/prs.json"
+INFILE="cache/data_dump.json"
 
 @dataclass
 class User:

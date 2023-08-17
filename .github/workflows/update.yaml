@@ -16,6 +16,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+
+      - name: Install Python dependencies
+        run: pip3 install -U PyGithub
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -28,15 +32,15 @@ jobs:
         continue-on-error: true
         run: |
           mkdir cache
-          wget --progress=dot https://$OWNER.github.io/$REPO_NAME/raw-prs.json.bz2 -O cache/prs.json.bz2
-          bunzip2 cache/prs.json.bz2
+          wget --progress=dot https://$OWNER.github.io/$REPO_NAME/data_dump.json.bz2 -O cache/data_dump.json.bz2
+          bunzip2 cache/data_dump.json.bz2
 
       - name: Update
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ./update_pr.py
-          bzip2 -c cache/prs.json > public/raw-prs.json.bz2
+          bzip2 -c cache/data_dump.json > public/data_dump.json.bz2
 
       - name: Crunch
         run: |
