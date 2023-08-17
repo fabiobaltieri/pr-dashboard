@@ -9,10 +9,11 @@ from dataclasses import dataclass
 
 token = os.environ["GITHUB_TOKEN"]
 
-ORG="zephyrproject-rtos"
-REPO="zephyr"
-PER_PAGE=100
-DATA_FILE="cache/data_dump.json"
+ORG = "zephyrproject-rtos"
+REPO = "zephyr"
+PER_PAGE = 100
+DATA_FILE = "cache/data_dump.json"
+BOOTSTRAP_LIMIT = 400
 
 pr_list_query = f"is:pr is:open repo:{ORG}/{REPO}"
 
@@ -101,6 +102,10 @@ def main(argv):
         pr = pr_issues[number].as_pull_request()
         new_data[number]["pr"] = pr.raw_data
         new_data[number]["reviews"] = fetch_reviews(pr)
+
+        if stats.new + stats.updated > BOOTSTRAP_LIMIT:
+            print("bootstrap limit hit")
+            break
 
     print(stats)
     print_rate_limit(gh)
