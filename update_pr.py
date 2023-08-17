@@ -75,8 +75,8 @@ def main(argv):
     new_data = {}
     stats = Stats()
     for number, pr_issue in pr_issues.items():
-        data = pr_issue.raw_data
-        new_data[number] = {"pr_issue": data}
+        new_updated_at = pr_issue.updated_at.timestamp()
+        new_data[number] = {"updated_at": new_updated_at}
 
         if not str(number) in old_data:
             print(f"new {number}");
@@ -88,8 +88,7 @@ def main(argv):
 
         old_data_entry = old_data[str(number)]
 
-        new_updated_at = data["updated_at"]
-        old_updated_at = old_data_entry["pr_issue"]["updated_at"]
+        old_updated_at = old_data_entry["updated_at"]
         if new_updated_at == old_updated_at:
             print(f"cache {number}");
             stats.cached += 1
