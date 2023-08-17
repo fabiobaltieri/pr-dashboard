@@ -32,10 +32,9 @@ def fetch_pr_issues(gh):
     pr_issues = {}
     issues = gh.search_issues(query=pr_list_query)
     for issue in issues:
-        print(f"Found {issue.repository} {issue.number}")
         pr_issues[issue.number] = issue
+    print(f"Found {len(pr_issues)} issues")
     return pr_issues
-
 
 def fetch_reviews(pr):
     reviews = []
@@ -73,11 +72,11 @@ def main(argv):
     pr_issues = fetch_pr_issues(gh)
 
     new_data = {}
-    for number, pr_issue in pr_issues.items():
-        new_data[number] = {"pr_issue": pr_issue.raw_data}
-
     stats = Stats()
-    for number, data in new_data.items():
+    for number, pr_issue in pr_issues.items():
+        data = pr_issue.raw_data
+        new_data[number] = {"pr_issue": data}
+
         if not str(number) in old_data:
             print(f"new {number}");
             stats.new += 1
@@ -88,7 +87,7 @@ def main(argv):
 
         old_data_entry = old_data[str(number)]
 
-        new_updated_at = data["pr_issue"]["updated_at"]
+        new_updated_at = data["updated_at"]
         old_updated_at = old_data_entry["pr_issue"]["updated_at"]
         if new_updated_at == old_updated_at:
             print(f"cache {number}");
