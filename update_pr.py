@@ -94,7 +94,7 @@ def main(argv):
 
         old_updated_at = old_data_entry["updated_at"]
         if new_updated_at == old_updated_at:
-            print(f"cache {number}");
+            # print(f"cache {number}");
             stats.cached += 1
             new_data[number]["pr"] = old_data_entry["pr"]
             new_data[number]["reviews"] = old_data_entry["reviews"]
