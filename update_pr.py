@@ -12,7 +12,7 @@ token = os.environ["GITHUB_TOKEN"]
 
 PER_PAGE = 100
 DATA_FILE = "cache/data_dump.json"
-BOOTSTRAP_LIMIT = 400
+BOOTSTRAP_LIMIT = 300
 
 @dataclass
 class Stats:
@@ -47,10 +47,15 @@ def fetch_pr_issues(gh, org, repos):
 
 def fetch_reviews(pr):
     reviews = []
-    review_data = pr.get_reviews()
-    for review in review_data:
+    for review in pr.get_reviews():
         reviews.append(review.raw_data)
     return reviews
+
+def fetch_comments(pr_issue):
+    comments = []
+    for comment in pr_issue.get_comments():
+        comments.append(comment._rawData)
+    return comments
 
 def load_old_prs():
     print(f"Loading previous data from {DATA_FILE}")
@@ -75,6 +80,7 @@ def update_entry(entry, pr_issue):
     pr = pr_issue.as_pull_request()
     entry["pr"] = pr.raw_data
     entry["reviews"] = fetch_reviews(pr)
+    entry["comments"] = fetch_comments(pr_issue)
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(description=__doc__)
@@ -121,6 +127,7 @@ def main(argv):
             stats.cached += 1
             new_data[key]["pr"] = old_data_entry["pr"]
             new_data[key]["reviews"] = old_data_entry["reviews"]
+            new_data[key]["comments"] = old_data_entry["comments"]
             continue
 
         print(f"update {key}");
