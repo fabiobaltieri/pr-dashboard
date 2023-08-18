@@ -1,0 +1,5 @@
+*.swp
+.west/
+cache/
+public/*.json
+west/
