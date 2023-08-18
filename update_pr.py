@@ -68,6 +68,11 @@ def save_new_prs(data):
     with open(DATA_FILE, "w") as outfile:
         json.dump(data, outfile)
 
+def update_entry(entry, pr_issue):
+    pr = pr_issue.as_pull_request()
+    entry["pr"] = pr.raw_data
+    entry["reviews"] = fetch_reviews(pr)
+
 def main(argv):
     token = os.environ.get('GITHUB_TOKEN', None)
     gh = Github(token, per_page=PER_PAGE)
@@ -90,9 +95,7 @@ def main(argv):
         if not key in old_data:
             print(f"new {key}");
             stats.new += 1
-            pr = pr_issue.as_pull_request()
-            new_data[key]["pr"] = pr.raw_data
-            new_data[key]["reviews"] = fetch_reviews(pr)
+            update_entry(new_data[key], pr_issue)
             continue
 
         old_data_entry = old_data[key]
@@ -107,9 +110,7 @@ def main(argv):
 
         print(f"update {key}");
         stats.updated += 1
-        pr = pr_issue.as_pull_request()
-        new_data[key]["pr"] = pr.raw_data
-        new_data[key]["reviews"] = fetch_reviews(pr)
+        update_entry(new_data[key], pr_issue)
 
     print(stats)
     print_rate_limit(gh)
