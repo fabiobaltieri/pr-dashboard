@@ -15,7 +15,7 @@ PER_PAGE = 100
 DATA_FILE = "cache/data_dump.json"
 BOOTSTRAP_LIMIT = 400
 
-pr_list_query = f"is:pr is:open repo:{ORG}/{REPO}"
+pr_list_query = f"is:pr is:open repo:{ORG}/{REPO} repo:{ORG}/segger"
 
 @dataclass
 class Stats:
@@ -29,11 +29,16 @@ def print_rate_limit(gh):
         if header.startswith("x-ratelimit"):
             print(f"{header}: {value}")
 
+def repo_from_url(url):
+    return url.split('/')[-3]
+
 def fetch_pr_issues(gh):
     pr_issues = {}
     issues = gh.search_issues(query=pr_list_query)
     for issue in issues:
-        pr_issues[issue.number] = issue
+        repo = repo_from_url(issue.url)
+        key = f"{repo}/{issue.number}"
+        pr_issues[key] = issue
     print(f"Found {len(pr_issues)} issues")
     return pr_issues
 
@@ -74,37 +79,37 @@ def main(argv):
 
     new_data = {}
     stats = Stats()
-    for number, pr_issue in pr_issues.items():
+    for key, pr_issue in pr_issues.items():
         if stats.new + stats.updated > BOOTSTRAP_LIMIT:
             print("bootstrap limit hit")
             break
 
         new_updated_at = pr_issue.updated_at.timestamp()
-        new_data[number] = {"updated_at": new_updated_at}
+        new_data[key] = {"updated_at": new_updated_at}
 
-        if not str(number) in old_data:
-            print(f"new {number}");
+        if not key in old_data:
+            print(f"new {key}");
             stats.new += 1
             pr = pr_issue.as_pull_request()
-            new_data[number]["pr"] = pr.raw_data
-            new_data[number]["reviews"] = fetch_reviews(pr)
+            new_data[key]["pr"] = pr.raw_data
+            new_data[key]["reviews"] = fetch_reviews(pr)
             continue
 
-        old_data_entry = old_data[str(number)]
+        old_data_entry = old_data[key]
 
         old_updated_at = old_data_entry["updated_at"]
         if new_updated_at == old_updated_at:
-            # print(f"cache {number}");
+            # print(f"cache {key}");
             stats.cached += 1
-            new_data[number]["pr"] = old_data_entry["pr"]
-            new_data[number]["reviews"] = old_data_entry["reviews"]
+            new_data[key]["pr"] = old_data_entry["pr"]
+            new_data[key]["reviews"] = old_data_entry["reviews"]
             continue
 
-        print(f"update {number}");
+        print(f"update {key}");
         stats.updated += 1
         pr = pr_issue.as_pull_request()
-        new_data[number]["pr"] = pr.raw_data
-        new_data[number]["reviews"] = fetch_reviews(pr)
+        new_data[key]["pr"] = pr.raw_data
+        new_data[key]["reviews"] = fetch_reviews(pr)
 
     print(stats)
     print_rate_limit(gh)

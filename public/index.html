@@ -124,10 +124,12 @@ a.blocked {
 
 	function appendData(values, table, last_action) {
 		const tbody = document.getElementById(table)
-		for (const pr of values.sort().reverse()) {
+		for (const key of values.sort().reverse()) {
 			const row = tbody.insertRow()
-			const prData = prs[String(pr)]
-			const lastAction = last_action[String(pr)]
+			const prData = prs[key]
+			const lastAction = last_action[key]
+			const repo = key.split("/")[0]
+			const pr = key.split("/")[1]
 
 			// TODO: do something with lastAction
 
@@ -142,7 +144,7 @@ a.blocked {
 			row.insertCell().innerHTML = userLink(prData.author)
 			row.insertCell().innerHTML = usersLink(prData.assignee_names)
 			row.insertCell().innerHTML = usersLink(prData.reviewer_names)
-			row.insertCell().innerHTML = prData.base
+			row.insertCell().innerHTML = repo + "/" + prData.base
 			row.insertCell().innerHTML = timeSince(prData.updated_at)
 			row.insertCell().innerHTML = approvedCount(prData.assignee_approved)
 			row.insertCell().innerHTML = approvedCount(prData.approved)
@@ -189,7 +191,7 @@ a.blocked {
 <table class="prs" id="author">
   <tr>
     <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
-    <th>Branch</th><th>Updated</th>
+    <th>Base</th><th>Updated</th>
     <th>&check;</th><th>+</th><th>&#10005;</th>
   </tr>
 </table>
@@ -199,7 +201,7 @@ a.blocked {
 <table class="prs" id="blocking">
   <tr>
     <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
-    <th>Branch</th><th>Updated</th>
+    <th>Base</th><th>Updated</th>
     <th>&check;</th><th>+</th><th>&#10005;</th>
   </tr>
 </table>
@@ -209,7 +211,7 @@ a.blocked {
 <table class="prs" id="assignee">
   <tr>
     <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
-    <th>Branch</th><th>Updated</th>
+    <th>Base</th><th>Updated</th>
     <th>&check;</th><th>+</th><th>&#10005;</th>
   </tr>
 </table>
@@ -219,7 +221,7 @@ a.blocked {
 <table class="prs" id="reviewer">
   <tr>
     <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
-    <th>Branch</th><th>Updated</th>
+    <th>Base</th><th>Updated</th>
     <th>&check;</th><th>+</th><th>&#10005;</th>
   </tr>
 </table>
@@ -229,7 +231,7 @@ a.blocked {
 <table class="prs" id="approved">
   <tr>
     <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
-    <th>Branch</th><th>Updated</th>
+    <th>Base</th><th>Updated</th>
     <th>&check;</th><th>+</th><th>&#10005;</th>
   </tr>
 </table>
@@ -239,7 +241,7 @@ a.blocked {
 <table class="prs" id="commented">
   <tr>
     <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
-    <th>Branch</th><th>Updated</th>
+    <th>Base</th><th>Updated</th>
     <th>&check;</th><th>+</th><th>&#10005;</th>
   </tr>
 </table>

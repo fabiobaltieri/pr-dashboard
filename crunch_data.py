@@ -61,8 +61,7 @@ def main(argv):
     with open(INFILE, "r") as infile:
         pr_dump = json.load(infile)
 
-    for number, data in pr_dump.items():
-        number = int(number)
+    for key, data in pr_dump.items():
         pr_data = data["pr"]
         reviews = data["reviews"]
 
@@ -72,16 +71,16 @@ def main(argv):
         pr.base = pr_data["base"]["ref"],
         pr.updated_at = pr_data["updated_at"]
 
-        users[pr.author].author.add(number)
+        users[pr.author].author.add(key)
 
         for assignee in pr_data["assignees"]:
             assignee_name = assignee["login"]
-            users[assignee_name].assignee.add(number)
+            users[assignee_name].assignee.add(key)
             pr.assignee_names.add(assignee_name)
 
         for reviewer in pr_data["requested_reviewers"]:
             reviewer_name = reviewer["login"]
-            users[reviewer_name].reviewer.add(number)
+            users[reviewer_name].reviewer.add(key)
             pr.reviewer_names.add(reviewer_name)
 
         final_review = defaultdict(str)
@@ -92,9 +91,9 @@ def main(argv):
         for reviewer_name, review in final_review.items():
             state = review["state"]
             updated_at = review["submitted_at"]
-            users[reviewer_name].last_action[number] = review["submitted_at"]
+            users[reviewer_name].last_action[key] = review["submitted_at"]
             if state == "APPROVED":
-                users[reviewer_name].approved.add(number)
+                users[reviewer_name].approved.add(key)
                 if reviewer_name in pr.assignee_names:
                     pr.assignee_approved += 1
                     pr.assignee_names.remove(reviewer_name)
@@ -103,10 +102,10 @@ def main(argv):
                     pr.approved += 1
                     pr.reviewer_names.add(f"+{reviewer_name}")
             elif state == "COMMENTED":
-                users[reviewer_name].commented.add(number)
+                users[reviewer_name].commented.add(key)
                 pr.reviewer_names.add(reviewer_name)
             elif state == "CHANGES_REQUESTED":
-                users[reviewer_name].blocking.add(number)
+                users[reviewer_name].blocking.add(key)
                 if reviewer_name in pr.assignee_names:
                     pr.assignee_names.remove(reviewer_name)
                     pr.assignee_names.add(f"-{reviewer_name}")
@@ -114,11 +113,11 @@ def main(argv):
                     pr.reviewer_names.add(f"-{reviewer_name}")
                 pr.blocked += 1
             elif state == "DISMISSED":
-                users[reviewer_name].dismissed.add(number)
+                users[reviewer_name].dismissed.add(key)
             else:
                 print(f"Unkown state: f{state}")
 
-        prs[number] = pr
+        prs[key] = pr
 
     for user, data in users.items():
         print(f"{user} {data}")
