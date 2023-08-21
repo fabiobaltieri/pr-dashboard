@@ -91,8 +91,8 @@ a.blocked {
 		return `<span class="${linkClass}">${count}</a>`
 	}
 
-	function prLink(pr, text) {
-		return `<a href="https://github.com/zephyrproject-rtos/zephyr/pull/${pr}">${text}</a>`
+	function prLink(repo, pr, text) {
+		return `<a href="https://github.com/zephyrproject-rtos/${repo}/pull/${pr}">${text}</a>`
 	}
 
 	function userLink(user) {
@@ -133,14 +133,14 @@ a.blocked {
 
 			// TODO: do something with lastAction
 
-			row.insertCell().innerHTML = prLink(pr, "#" + pr)
+			row.insertCell().innerHTML = prLink(repo, pr, "#" + pr)
 
 			if (prData === undefined) {
 				row.insertCell().innerHTML = "-- missing PR data --"
 				continue
 			}
 
-			row.insertCell().innerHTML = prLink(pr, prData.title)
+			row.insertCell().innerHTML = prLink(repo, pr, prData.title)
 			row.insertCell().innerHTML = userLink(prData.author)
 			row.insertCell().innerHTML = usersLink(prData.assignee_names)
 			row.insertCell().innerHTML = usersLink(prData.reviewer_names)
