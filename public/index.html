@@ -59,6 +59,12 @@ a.blocked {
 	background-color: #333f67;
 	color: white;
 }
+
+.prs tr.draft {
+	font-style: italic;
+	opacity: 0.5;
+}
+
 </style>
 
 <script type="text/javascript">
@@ -132,6 +138,10 @@ a.blocked {
 			const pr = key.split("/")[1]
 
 			// TODO: do something with lastAction
+
+			if (prData.draft) {
+				row.classList.add("draft")
+			}
 
 			row.insertCell().innerHTML = prLink(repo, pr, "#" + pr)
 

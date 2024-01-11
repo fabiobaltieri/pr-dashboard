@@ -37,6 +37,7 @@ class PR:
     approved: int = 0
     blocked: int = 0
     updated_at: str = None
+    draft: bool = False
 
     def toJSON(self):
         out = {}
@@ -70,6 +71,7 @@ def main(argv):
         pr.author = pr_data["user"]["login"]
         pr.base = pr_data["base"]["ref"],
         pr.updated_at = pr_data["updated_at"]
+        pr.draft = pr_data["draft"]
 
         users[pr.author].author.add(key)
 
