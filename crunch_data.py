@@ -87,6 +87,8 @@ def main(argv):
 
         final_review = defaultdict(str)
         for review in reviews:
+            if review["user"] is None:
+                continue
             reviewer_name = review["user"]["login"]
             final_review[reviewer_name] = review
 
