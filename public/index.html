@@ -71,24 +71,16 @@ a.blocked {
 
 </style>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+
+
 <script type="text/javascript">
 	const urlParams = new URLSearchParams(window.location.search);
 	prs = null
 
 	function timeSince(timestamp) {
-		const d = Date.parse(timestamp)
-		const delta_ms = Date.now() - d
-
-		const minutes = delta_ms / 1000 / 60
-		const hours = minutes / 60
-		const days = hours / 24
-
-		if (minutes < 60)
-			return Math.round(minutes) + " mins"
-		else if (hours < 24)
-			return Math.round(hours) + " hours"
-		else
-			return Math.round(days) + " days"
+		const then = moment(timestamp);
+		return then.fromNow();
 	}
 
 	function approvedCount(count) {
