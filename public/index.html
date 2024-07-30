@@ -62,17 +62,22 @@ a.blocked {
 	text-align: left;
 	background-color: #333f67;
 	color: white;
+	cursor: pointer;
 }
 
 .prs tr.draft {
 	font-style: italic;
 	opacity: 0.5;
 }
-
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.1.2/css/dataTables.jqueryui.min.css">
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/2.1.2/js/dataTables.min.js"></script>
+<script type="text/javascript" charset="utf8"
+	src="https://cdn.datatables.net/2.1.2/js/dataTables.jqueryui.min.js"></script>
 
 <script type="text/javascript">
 	const urlParams = new URLSearchParams(window.location.search);
@@ -151,7 +156,11 @@ a.blocked {
 			row.insertCell().innerHTML = usersLink(prData.assignee_names)
 			row.insertCell().innerHTML = usersLink(prData.reviewer_names)
 			row.insertCell().innerHTML = repo + "/" + prData.base
-			row.insertCell().innerHTML = timeSince(prData.updated_at)
+
+			timesinceCell = row.insertCell()
+			timesinceCell.innerHTML = timeSince(prData.updated_at)
+			timesinceCell.setAttribute("data-order", prData.updated_at)
+
 			row.insertCell().innerHTML = approvedCount(prData.assignee_approved)
 			row.insertCell().innerHTML = approvedCount(prData.approved)
 			row.insertCell().innerHTML = blockedCount(prData.blocked)
@@ -175,6 +184,15 @@ a.blocked {
 				appendUser(values)
 			}
 		}
+
+		$('.prs').DataTable({
+			"order": [
+				[6, "desc"] // show most recently updated PRs first
+			],
+			"paging": false,
+			"info": false,
+		});
+
 	}
 
 	window.addEventListener("load", (event) => {
