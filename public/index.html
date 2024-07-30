@@ -125,7 +125,7 @@ a.blocked {
 	}
 
 	function appendData(values, table, last_action) {
-		const tbody = document.getElementById(table)
+		const tbody = document.getElementById(table).getElementsByTagName("tbody")[0]
 		for (const key of values.sort().reverse()) {
 			const row = tbody.insertRow()
 			const prData = prs[key]
@@ -191,65 +191,123 @@ a.blocked {
 </head>
 
 <body>
-
 <h1>Authored</h1>
 
 <table class="prs" id="author">
-  <tr>
-    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
-    <th>Base</th><th>Updated</th>
-    <th>&check;</th><th>+</th><th>&#10005;</th>
-  </tr>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Title</th>
+      <th>Author</th>
+      <th>Assignee</th>
+      <th>Reviewers</th>
+      <th>Base</th>
+      <th>Updated</th>
+      <th>&check;</th>
+      <th>+</th>
+      <th>&#10005;</th>
+      </tr>
+  </thead>
+  <tbody></tbody>
 </table>
 
 <h1>Blocked</h1>
 
 <table class="prs" id="blocking">
-  <tr>
-    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
-    <th>Base</th><th>Updated</th>
-    <th>&check;</th><th>+</th><th>&#10005;</th>
-  </tr>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Title</th>
+      <th>Author</th>
+      <th>Assignee</th>
+      <th>Reviewers</th>
+      <th>Base</th>
+      <th>Updated</th>
+      <th>&check;</th>
+      <th>+</th>
+      <th>&#10005;</th>
+      </tr>
+  </thead>
+  <tbody></tbody>
 </table>
-
 <h1>Assigned</h1>
 
 <table class="prs" id="assignee">
-  <tr>
-    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
-    <th>Base</th><th>Updated</th>
-    <th>&check;</th><th>+</th><th>&#10005;</th>
-  </tr>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Title</th>
+      <th>Author</th>
+      <th>Assignee</th>
+      <th>Reviewers</th>
+      <th>Base</th>
+      <th>Updated</th>
+      <th>&check;</th>
+      <th>+</th>
+      <th>&#10005;</th>
+      </tr>
+  </thead>
+  <tbody></tbody>
 </table>
 
 <h1>Reviews</h1>
 
 <table class="prs" id="reviewer">
-  <tr>
-    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
-    <th>Base</th><th>Updated</th>
-    <th>&check;</th><th>+</th><th>&#10005;</th>
-  </tr>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Title</th>
+      <th>Author</th>
+      <th>Assignee</th>
+      <th>Reviewers</th>
+      <th>Base</th>
+      <th>Updated</th>
+      <th>&check;</th>
+      <th>+</th>
+      <th>&#10005;</th>
+      </tr>
+  </thead>
+  <tbody></tbody>
 </table>
 
 <h1>Approved</h1>
 
 <table class="prs" id="approved">
-  <tr>
-    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
-    <th>Base</th><th>Updated</th>
-    <th>&check;</th><th>+</th><th>&#10005;</th>
-  </tr>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Title</th>
+      <th>Author</th>
+      <th>Assignee</th>
+      <th>Reviewers</th>
+      <th>Base</th>
+      <th>Updated</th>
+      <th>&check;</th>
+      <th>+</th>
+      <th>&#10005;</th>
+      </tr>
+  </thead>
+  <tbody></tbody>
 </table>
 
 <h1>Commented</h1>
 
 <table class="prs" id="commented">
-  <tr>
-    <th>#</th><th>Title</th><th>Author</th><th>Assignee</th><th>Reviewers</th>
-    <th>Base</th><th>Updated</th>
-    <th>&check;</th><th>+</th><th>&#10005;</th>
-  </tr>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Title</th>
+      <th>Author</th>
+      <th>Assignee</th>
+      <th>Reviewers</th>
+      <th>Base</th>
+      <th>Updated</th>
+      <th>&check;</th>
+      <th>+</th>
+      <th>&#10005;</th>
+      </tr>
+  </thead>
+  <tbody></tbody>
 </table>
 
 </body>
