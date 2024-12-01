@@ -69,6 +69,19 @@ a.blocked {
 	font-style: italic;
 	opacity: 0.5;
 }
+
+.prs caption {
+	font-size: 1.6rem;
+	font-weight: bold;
+	text-align: left;
+	margin-bottom: 10px;
+	margin-top: -1.5em;
+}
+
+.dt-container {
+	margin-bottom: 2em;
+}
+
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
@@ -165,6 +178,16 @@ a.blocked {
 			row.insertCell().innerHTML = approvedCount(prData.approved)
 			row.insertCell().innerHTML = blockedCount(prData.blocked)
 		}
+
+		let datatable = $(`#${table}`).DataTable({
+			"order": [
+				[6, "desc"] // show most recently updated PRs first
+			],
+			"paging": false,
+			"info": false,
+		});
+
+		datatable.caption(`${datatable.caption()} (${datatable.rows().count()})`);
 	}
 
 	function appendUser(values) {
@@ -184,15 +207,6 @@ a.blocked {
 				appendUser(values)
 			}
 		}
-
-		$('.prs').DataTable({
-			"order": [
-				[6, "desc"] // show most recently updated PRs first
-			],
-			"paging": false,
-			"info": false,
-		});
-
 	}
 
 	window.addEventListener("load", (event) => {
@@ -209,9 +223,9 @@ a.blocked {
 </head>
 
 <body>
-<h1>Authored</h1>
 
 <table class="prs" id="author">
+<caption>Authored</caption>
   <thead>
     <tr>
       <th>#</th>
@@ -228,10 +242,9 @@ a.blocked {
   </thead>
   <tbody></tbody>
 </table>
-
-<h1>Blocked</h1>
 
 <table class="prs" id="blocking">
+<caption>Blocked</caption>
   <thead>
     <tr>
       <th>#</th>
@@ -248,9 +261,9 @@ a.blocked {
   </thead>
   <tbody></tbody>
 </table>
-<h1>Assigned</h1>
 
 <table class="prs" id="assignee">
+<caption>Assigned</caption>
   <thead>
     <tr>
       <th>#</th>
@@ -267,10 +280,9 @@ a.blocked {
   </thead>
   <tbody></tbody>
 </table>
-
-<h1>Reviews</h1>
 
 <table class="prs" id="reviewer">
+<caption>Reviewed</caption>
   <thead>
     <tr>
       <th>#</th>
@@ -287,10 +299,9 @@ a.blocked {
   </thead>
   <tbody></tbody>
 </table>
-
-<h1>Approved</h1>
 
 <table class="prs" id="approved">
+<caption>Approved</caption>
   <thead>
     <tr>
       <th>#</th>
@@ -308,9 +319,8 @@ a.blocked {
   <tbody></tbody>
 </table>
 
-<h1>Commented</h1>
-
 <table class="prs" id="commented">
+<caption>Commented</caption>
   <thead>
     <tr>
       <th>#</th>
