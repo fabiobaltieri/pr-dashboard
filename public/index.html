@@ -1,344 +1,358 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <style>
+      body {
+        font-family: Roboto;
+        font-size: 14px;
+      }
 
-<head>
-<style>
-body {
-	font-family: Roboto;
-	font-size: 14px
-}
+      a {
+        text-decoration: none;
+        color: #000000;
+      }
 
-a {
-	text-decoration: none;
-	color: #000000;
-}
+      a:hover {
+        text-decoration: underline;
+        color: #000000;
+      }
 
-a:hover {
-	text-decoration: underline;
-	color: #000000;
-}
+      span.approved {
+        color: #269926;
+      }
 
-span.approved {
-	color: #269926
-}
+      span.blocked {
+        color: #992626;
+      }
 
-span.blocked {
-	color: #992626
-}
+      span.none {
+        color: #999999;
+      }
 
-span.none {
-	color: #999999
-}
+      a.approved {
+        color: #269926;
+      }
 
-a.approved {
-	color: #269926
-}
+      a.blocked {
+        color: #992626;
+      }
 
-a.blocked {
-	color: #992626
-}
+      .prs {
+        border-collapse: collapse;
+        width: 100%;
+      }
 
-.prs {
-	border-collapse: collapse;
-	width: 100%;
-}
+      .prs td,
+      .prs th {
+        border: 1px solid #ddd;
+        padding: 4px;
+      }
 
-.prs td, .prs th {
-	border: 1px solid #ddd;
-	padding: 4px;
-}
+      .prs tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
 
-.prs tr:nth-child(even) {
-	background-color: #f2f2f2;
-}
+      .prs tr:hover {
+        background-color: #ddd;
+      }
 
-.prs tr:hover {
-	background-color: #ddd;
-}
+      .prs th {
+        padding-top: 4px;
+        padding-bottom: 4px;
+        text-align: left;
+        background-color: #333f67;
+        color: white;
+        cursor: pointer;
+      }
 
-.prs th {
-	padding-top: 4px;
-	padding-bottom: 4px;
-	text-align: left;
-	background-color: #333f67;
-	color: white;
-	cursor: pointer;
-}
+      .prs tr.draft {
+        font-style: italic;
+        opacity: 0.5;
+      }
 
-.prs tr.draft {
-	font-style: italic;
-	opacity: 0.5;
-}
+      .prs caption {
+        position: relative;
+        z-index: -1;
+        font-size: 1.6rem;
+        font-weight: bold;
+        text-align: left;
+        margin-bottom: 10px;
+        margin-top: -1.5em;
+      }
 
-.prs caption {
-	position: relative;
-	z-index: -1;
-	font-size: 1.6rem;
-	font-weight: bold;
-	text-align: left;
-	margin-bottom: 10px;
-	margin-top: -1.5em;
-}
+      .dt-container {
+        margin-bottom: 2em;
+      }
+    </style>
 
-.dt-container {
-	margin-bottom: 2em;
-}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-</style>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.datatables.net/2.1.2/css/dataTables.jqueryui.min.css" />
+    <script
+      type="text/javascript"
+      charset="utf8"
+      src="https://cdn.datatables.net/2.1.2/js/dataTables.min.js"></script>
+    <script
+      type="text/javascript"
+      charset="utf8"
+      src="https://cdn.datatables.net/2.1.2/js/dataTables.jqueryui.min.js"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script type="text/javascript">
+      const urlParams = new URLSearchParams(window.location.search);
+      prs = null;
 
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.1.2/css/dataTables.jqueryui.min.css">
-<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/2.1.2/js/dataTables.min.js"></script>
-<script type="text/javascript" charset="utf8"
-	src="https://cdn.datatables.net/2.1.2/js/dataTables.jqueryui.min.js"></script>
+      function timeSince(timestamp) {
+        const then = moment(timestamp);
+        return then.fromNow();
+      }
 
-<script type="text/javascript">
-	const urlParams = new URLSearchParams(window.location.search);
-	prs = null
+      function approvedCount(count) {
+        linkClass = count ? "approved" : "none";
+        return `<span class="${linkClass}">${count}</a>`;
+      }
 
-	function timeSince(timestamp) {
-		const then = moment(timestamp);
-		return then.fromNow();
-	}
+      function blockedCount(count) {
+        linkClass = count ? "blocked" : "none";
+        return `<span class="${linkClass}">${count}</a>`;
+      }
 
-	function approvedCount(count) {
-		linkClass = count ? "approved" : "none"
-		return `<span class="${linkClass}">${count}</a>`
-	}
+      function prLink(repo, pr, text) {
+        return `<a href="https://github.com/zephyrproject-rtos/${repo}/pull/${pr}">${text}</a>`;
+      }
 
-	function blockedCount(count) {
-		linkClass = count ? "blocked" : "none"
-		return `<span class="${linkClass}">${count}</a>`
-	}
+      function userLink(user) {
+        linkClass = "";
+        if (user.startsWith("+")) {
+          linkClass = "approved";
+          user = user.substring(1);
+        }
+        if (user.startsWith("-")) {
+          linkClass = "blocked";
+          user = user.substring(1);
+        }
 
-	function prLink(repo, pr, text) {
-		return `<a href="https://github.com/zephyrproject-rtos/${repo}/pull/${pr}">${text}</a>`
-	}
+        return `<a class="${linkClass}" href="https://github.com/${user}">${user}</a>`;
+      }
 
-	function userLink(user) {
-		linkClass = ""
-		if (user.startsWith("+")) {
-			linkClass = "approved"
-			user = user.substring(1)
-		}
-		if (user.startsWith("-")) {
-			linkClass = "blocked"
-			user = user.substring(1)
-		}
+      function usersLink(users) {
+        out = [];
+        for (const user of users.sort()) {
+          out.push(userLink(user));
+        }
+        // TODO: CSS should handle this
+        if (out.length > 4) {
+          out = out.slice(0, 4);
+          out.push("...");
+        }
+        return out.join(", ");
+      }
 
-		return `<a class="${linkClass}" href="https://github.com/${user}">${user}</a>`
-	}
+      function appendData(values, table, last_action) {
+        const tbody = document.getElementById(table).getElementsByTagName("tbody")[0];
+        for (const key of values.sort().reverse()) {
+          const row = tbody.insertRow();
+          const prData = prs[key];
+          const lastAction = last_action[key];
+          const repo = key.split("/")[0];
+          const pr = key.split("/")[1];
 
-	function usersLink(users) {
-		out = []
-		for (const user of users.sort()) {
-			out.push(userLink(user))
-		}
-		// TODO: CSS should handle this
-		if (out.length > 4) {
-			out = out.slice(0, 4)
-			out.push("...")
-		}
-		return out.join(", ")
-	}
+          // TODO: do something with lastAction
 
-	function appendData(values, table, last_action) {
-		const tbody = document.getElementById(table).getElementsByTagName("tbody")[0]
-		for (const key of values.sort().reverse()) {
-			const row = tbody.insertRow()
-			const prData = prs[key]
-			const lastAction = last_action[key]
-			const repo = key.split("/")[0]
-			const pr = key.split("/")[1]
+          if (prData.draft) {
+            row.classList.add("draft");
+          }
 
-			// TODO: do something with lastAction
+          row.insertCell().innerHTML = prLink(repo, pr, "#" + pr);
 
-			if (prData.draft) {
-				row.classList.add("draft")
-			}
+          if (prData === undefined) {
+            row.insertCell().innerHTML = "-- missing PR data --";
+            continue;
+          }
 
-			row.insertCell().innerHTML = prLink(repo, pr, "#" + pr)
+          row.insertCell().innerHTML = prLink(repo, pr, prData.title);
+          row.insertCell().innerHTML = userLink(prData.author);
+          row.insertCell().innerHTML = usersLink(prData.assignee_names);
+          row.insertCell().innerHTML = usersLink(prData.reviewer_names);
+          row.insertCell().innerHTML = repo + "/" + prData.base;
 
-			if (prData === undefined) {
-				row.insertCell().innerHTML = "-- missing PR data --"
-				continue
-			}
+          timesinceCell = row.insertCell();
+          timesinceCell.innerHTML = timeSince(prData.updated_at);
+          timesinceCell.setAttribute("data-order", prData.updated_at);
 
-			row.insertCell().innerHTML = prLink(repo, pr, prData.title)
-			row.insertCell().innerHTML = userLink(prData.author)
-			row.insertCell().innerHTML = usersLink(prData.assignee_names)
-			row.insertCell().innerHTML = usersLink(prData.reviewer_names)
-			row.insertCell().innerHTML = repo + "/" + prData.base
+          row.insertCell().innerHTML = approvedCount(prData.assignee_approved);
+          row.insertCell().innerHTML = approvedCount(prData.approved);
+          row.insertCell().innerHTML = blockedCount(prData.blocked);
+        }
 
-			timesinceCell = row.insertCell()
-			timesinceCell.innerHTML = timeSince(prData.updated_at)
-			timesinceCell.setAttribute("data-order", prData.updated_at)
+        let datatable = $(`#${table}`).DataTable({
+          order: [
+            [6, "desc"], // show most recently updated PRs first
+          ],
+          paging: false,
+          info: false,
+        });
 
-			row.insertCell().innerHTML = approvedCount(prData.assignee_approved)
-			row.insertCell().innerHTML = approvedCount(prData.approved)
-			row.insertCell().innerHTML = blockedCount(prData.blocked)
-		}
+        datatable.caption(`${datatable.caption()} (${datatable.rows().count()})`);
+      }
 
-		let datatable = $(`#${table}`).DataTable({
-			"order": [
-				[6, "desc"] // show most recently updated PRs first
-			],
-			"paging": false,
-			"info": false,
-		});
+      function appendUser(values) {
+        appendData(values.author, "author", values.last_action);
+        appendData(values.blocking, "blocking", values.last_action);
+        appendData(values.assignee, "assignee", values.last_action);
+        appendData(values.reviewer, "reviewer", values.last_action);
+        appendData(values.approved, "approved", values.last_action);
+        appendData(values.commented, "commented", values.last_action);
+      }
 
-		datatable.caption(`${datatable.caption()} (${datatable.rows().count()})`);
-	}
+      function processData(data) {
+        self.prs = data[0];
+        users = data[1];
+        for (const [username, values] of Object.entries(users)) {
+          if (urlParams.get("username") == username) {
+            appendUser(values);
+          }
+        }
+      }
 
-	function appendUser(values) {
-		appendData(values.author, "author", values.last_action)
-		appendData(values.blocking, "blocking", values.last_action)
-		appendData(values.assignee, "assignee", values.last_action)
-		appendData(values.reviewer, "reviewer", values.last_action)
-		appendData(values.approved, "approved", values.last_action)
-		appendData(values.commented, "commented", values.last_action)
-	}
+      window.addEventListener("load", (event) => {
+        const urls = ["prs.json", "users.json"];
 
-	function processData(data) {
-		self.prs = data[0]
-		users = data[1]
-		for (const [username, values] of Object.entries(users)) {
-			if (urlParams.get("username") == username) {
-				appendUser(values)
-			}
-		}
-	}
+        Promise.all(urls.map((url) => fetch(url).then((res) => res.json()))).then((res) =>
+          processData(res)
+        );
+      });
+    </script>
+  </head>
 
-	window.addEventListener("load", (event) => {
-		const urls = ["prs.json", "users.json"]
+  <body>
+    <table class="prs" id="author">
+      <caption>
+        Authored
+      </caption>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Assignee</th>
+          <th>Reviewers</th>
+          <th>Base</th>
+          <th>Updated</th>
+          <th>&check;</th>
+          <th>+</th>
+          <th>&#10005;</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
-		Promise.all(
-			urls.map(url =>
-				 fetch(url).then(res => res.json())
-			)
-		).then(res => processData(res))
+    <table class="prs" id="blocking">
+      <caption>
+        Blocked
+      </caption>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Assignee</th>
+          <th>Reviewers</th>
+          <th>Base</th>
+          <th>Updated</th>
+          <th>&check;</th>
+          <th>+</th>
+          <th>&#10005;</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
-	})
-</script>
-</head>
+    <table class="prs" id="assignee">
+      <caption>
+        Assigned
+      </caption>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Assignee</th>
+          <th>Reviewers</th>
+          <th>Base</th>
+          <th>Updated</th>
+          <th>&check;</th>
+          <th>+</th>
+          <th>&#10005;</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
-<body>
+    <table class="prs" id="reviewer">
+      <caption>
+        Reviewed
+      </caption>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Assignee</th>
+          <th>Reviewers</th>
+          <th>Base</th>
+          <th>Updated</th>
+          <th>&check;</th>
+          <th>+</th>
+          <th>&#10005;</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
-<table class="prs" id="author">
-<caption>Authored</caption>
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Title</th>
-      <th>Author</th>
-      <th>Assignee</th>
-      <th>Reviewers</th>
-      <th>Base</th>
-      <th>Updated</th>
-      <th>&check;</th>
-      <th>+</th>
-      <th>&#10005;</th>
-      </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+    <table class="prs" id="approved">
+      <caption>
+        Approved
+      </caption>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Assignee</th>
+          <th>Reviewers</th>
+          <th>Base</th>
+          <th>Updated</th>
+          <th>&check;</th>
+          <th>+</th>
+          <th>&#10005;</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
-<table class="prs" id="blocking">
-<caption>Blocked</caption>
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Title</th>
-      <th>Author</th>
-      <th>Assignee</th>
-      <th>Reviewers</th>
-      <th>Base</th>
-      <th>Updated</th>
-      <th>&check;</th>
-      <th>+</th>
-      <th>&#10005;</th>
-      </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-<table class="prs" id="assignee">
-<caption>Assigned</caption>
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Title</th>
-      <th>Author</th>
-      <th>Assignee</th>
-      <th>Reviewers</th>
-      <th>Base</th>
-      <th>Updated</th>
-      <th>&check;</th>
-      <th>+</th>
-      <th>&#10005;</th>
-      </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-<table class="prs" id="reviewer">
-<caption>Reviewed</caption>
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Title</th>
-      <th>Author</th>
-      <th>Assignee</th>
-      <th>Reviewers</th>
-      <th>Base</th>
-      <th>Updated</th>
-      <th>&check;</th>
-      <th>+</th>
-      <th>&#10005;</th>
-      </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-<table class="prs" id="approved">
-<caption>Approved</caption>
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Title</th>
-      <th>Author</th>
-      <th>Assignee</th>
-      <th>Reviewers</th>
-      <th>Base</th>
-      <th>Updated</th>
-      <th>&check;</th>
-      <th>+</th>
-      <th>&#10005;</th>
-      </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-<table class="prs" id="commented">
-<caption>Commented</caption>
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Title</th>
-      <th>Author</th>
-      <th>Assignee</th>
-      <th>Reviewers</th>
-      <th>Base</th>
-      <th>Updated</th>
-      <th>&check;</th>
-      <th>+</th>
-      <th>&#10005;</th>
-      </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-</body>
+    <table class="prs" id="commented">
+      <caption>
+        Commented
+      </caption>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Assignee</th>
+          <th>Reviewers</th>
+          <th>Base</th>
+          <th>Updated</th>
+          <th>&check;</th>
+          <th>+</th>
+          <th>&#10005;</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </body>
 </html>
