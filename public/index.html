@@ -112,12 +112,12 @@
 
       function approvedCount(count) {
         linkClass = count ? "approved" : "none";
-        return `<span class="${linkClass}">${count}</a>`;
+        return `<span class="${linkClass}">${count}</span>`;
       }
 
       function blockedCount(count) {
         linkClass = count ? "blocked" : "none";
-        return `<span class="${linkClass}">${count}</a>`;
+        return `<span class="${linkClass}">${count}</span>`;
       }
 
       function prLink(repo, pr, text) {
