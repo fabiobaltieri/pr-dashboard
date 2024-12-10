@@ -17,6 +17,27 @@
         color: #000000;
       }
 
+      #gh-username-input {
+        width: 300px;
+        padding: 10px 15px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        transition: border-color 0.3s, box-shadow 0.3s;
+        outline: none;
+      }
+
+      #gh-username-input:focus {
+        border-color: #333f67;
+        box-shadow: 0px 0px 8px rgba(51, 63, 103, 0.5);
+      }
+
+      #gh-username-input::placeholder {
+        color: #aaa;
+        font-style: italic;
+      }
+
       span.approved {
         color: #269926;
       }
@@ -102,8 +123,26 @@
       src="https://cdn.datatables.net/2.1.2/js/dataTables.jqueryui.min.js"></script>
 
     <script type="text/javascript">
-      const urlParams = new URLSearchParams(window.location.search);
       prs = null;
+
+      function saveGHUser(name) {
+        localStorage.setItem("gh_user", name);
+      }
+
+      function loadGHUser() {
+        return localStorage.getItem("gh_user");
+      }
+
+      function populateAutocomplete(users) {
+        const datalist = document.getElementById("usernames");
+        Object.keys(users)
+          .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+          .forEach((username) => {
+            const option = document.createElement("option");
+            option.value = username;
+            datalist.appendChild(option);
+          });
+      }
 
       function timeSince(timestamp) {
         const then = moment(timestamp);
@@ -219,10 +258,12 @@
         prs = data[0];
         const users = data[1];
         for (const [username, values] of Object.entries(users)) {
+          urlParams = new URLSearchParams(window.location.search);
           if (urlParams.get("username") === username) {
             appendUser(values);
           }
         }
+        populateAutocomplete(users);
       }
 
       window.addEventListener("load", () => {
@@ -238,16 +279,45 @@
         tableConfigs.forEach((config) => {
           createDataTable(config.id, config.caption);
         });
-        const urls = ["prs.json", "users.json"];
 
+        const ghUsernameInput = document.getElementById("gh-username-input");
+        ghUsernameInput.value = new URLSearchParams(window.location.search).get("username") || loadGHUser();
+        history.replaceState(null, "", `?username=${ghUsernameInput.value}`);
+
+        // ENTER key pressed
+        ghUsernameInput.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") {
+            const username = ghUsernameInput.value.trim();
+            saveGHUser(username);
+            window.location.href = `?username=${username}`;
+          }
+        });
+
+        // autocomplete entry selection
+        ghUsernameInput.addEventListener("change", () => {
+          const username = ghUsernameInput.value.trim();
+          saveGHUser(username);
+          window.location.href = `?username=${username}`;
+        });
+
+        const urls = ["prs.json", "users.json"];
         Promise.all(urls.map((url) => fetch(url).then((res) => res.json()))).then((res) =>
           processData(res)
         );
+
       });
     </script>
   </head>
 
   <body>
+    <div style="text-align: center; margin-bottom: 20px">
+      <input
+        id="gh-username-input"
+        type="text"
+        placeholder="Enter GitHub username"
+        list="usernames" />
+      <datalist id="usernames"></datalist>
+    </div>
     <table id="author" class="prs"></table>
     <table id="blocking" class="prs"></table>
     <table id="assignee" class="prs"></table>
