@@ -182,9 +182,6 @@
             { title: "Reviewers" },
             { title: "Base" },
             { title: "Updated" },
-            { title: "&check;" },
-            { title: "+" },
-            { title: "&#10005;" },
             { title: "Status", visible: false },
           ],
           order: [[6, "desc"]], // Show most recently updated PRs first
@@ -192,7 +189,7 @@
           info: false,
           stateSave: true,
           createdRow: function (row, data, index) {
-            if (data[10] === "draft") {
+            if (data[7] === "draft") {
               $(row).addClass("draft");
             }
           },
@@ -215,9 +212,6 @@
             prData ? usersLink(prData.reviewer_names) : "",
             prData ? `${repo}/${prData.base}` : "",
             prData ? timeSince(prData.updated_at) : "",
-            prData ? approvedCount(prData.assignee_approved) : "",
-            prData ? approvedCount(prData.approved) : "",
-            prData ? blockedCount(prData.blocked) : "",
             prData ? (prData.draft ? "draft" : "open") : "",
           ];
 
