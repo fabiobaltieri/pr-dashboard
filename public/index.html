@@ -159,17 +159,11 @@
         return `<a class="${linkClass}" href="https://github.com/${user}">${user}</a>`;
       }
 
-      function usersLink(users) {
-        out = [];
-        for (const user of users.sort()) {
-          out.push(userLink(user));
-        }
-        // TODO: CSS should handle this
-        if (out.length > 4) {
-          out = out.slice(0, 4);
-          out.push("...");
-        }
-        return out.join(", ");
+      function sortUsernames(a, b) {
+        const getPriority = (str) => (str.startsWith("-") ? -2 : str.startsWith("+") ? -1 : 0);
+        const priorityA = getPriority(a);
+        const priorityB = getPriority(b);
+        return priorityA === priorityB ? a.localeCompare(b) : priorityA - priorityB;
       }
 
       function createDataTable(id, caption) {
@@ -177,11 +171,25 @@
           columns: [
             { title: "#" },
             { title: "Title" },
-            { title: "Author" },
-            { title: "Assignee" },
-            { title: "Reviewers" },
+            {
+              title: "Author",
+              render: (data, type, row) => (type == "display" ? userLink(data) : data),
+            },
+            {
+              title: "Assignee",
+              render: (data, type, row) =>
+                type == "display" ? data.sort(sortUsernames).map(userLink).join(", ") : data,
+            },
+            {
+              title: "Reviewers",
+              render: (data, type, row) =>
+                type == "display" ? data.sort(sortUsernames).map(userLink).join(", ") : data,
+            },
             { title: "Base" },
-            { title: "Updated" },
+            {
+              title: "Updated",
+              render: (data, type, row) => (type == "display" ? timeSince(data) : data),
+            },
             { title: "Status", visible: false },
           ],
           order: [[6, "desc"]], // Show most recently updated PRs first
@@ -207,11 +215,11 @@
           const row = [
             prLink(repo, pr, "#" + pr),
             prData ? prLink(repo, pr, prData.title) : "-- missing PR data --",
-            prData ? userLink(prData.author) : "",
-            prData ? usersLink(prData.assignee_names) : "",
-            prData ? usersLink(prData.reviewer_names) : "",
+            prData ? prData.author : "",
+            prData ? prData.assignee_names : [],
+            prData ? prData.reviewer_names : [],
             prData ? `${repo}/${prData.base}` : "",
-            prData ? timeSince(prData.updated_at) : "",
+            prData ? prData.updated_at : "",
             prData ? (prData.draft ? "draft" : "open") : "",
           ];
 
