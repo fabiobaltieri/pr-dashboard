@@ -58,6 +58,20 @@
         color: #992626;
       }
 
+      .ellipsis {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .narrow {
+        max-width: 150px;
+      }
+
+      .wide {
+        max-width: 400px;
+      }
+
       .prs th {
         background-color: #333f67;
         color: white;
@@ -103,6 +117,15 @@
       type="text/javascript"
       charset="utf8"
       src="https://cdn.datatables.net/2.1.8/js/dataTables.jqueryui.min.js"></script>
+
+    <script
+      type="text/javascript"
+      charset="utf8"
+      src="https://cdn.datatables.net/responsive/3.0.3/js/dataTables.responsive.min.js"></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.datatables.net/responsive/3.0.3/css/responsive.dataTables.min.css" />
 
     <script type="text/javascript">
       prs = null;
@@ -169,32 +192,40 @@
       function createDataTable(id, caption) {
         new DataTable($(`#${id}`), {
           columns: [
-            { title: "#" },
-            { title: "Title" },
+            { title: "#", responsivePriority: 100 },
+            { title: "Title", className: "ellipsis wide", responsivePriority: 2 },
             {
               title: "Author",
               render: (data, type, row) => (type == "display" ? userLink(data) : data),
+              responsivePriority: 3,
             },
             {
               title: "Assignee",
               render: (data, type, row) =>
                 type == "display" ? data.sort(sortUsernames).map(userLink).join(", ") : data,
+              responsivePriority: 4,
             },
             {
               title: "Reviewers",
               render: (data, type, row) =>
                 type == "display" ? data.sort(sortUsernames).map(userLink).join(", ") : data,
+              className: "ellipsis narrow",
+              responsivePriority: 5,
             },
-            { title: "Base" },
+            { title: "Base", responsivePriority: 200 },
             {
               title: "Updated",
               render: (data, type, row) => (type == "display" ? timeSince(data) : data),
+              responsivePriority: 6,
             },
             { title: "Status", visible: false },
           ],
           order: [[6, "desc"]], // Show most recently updated PRs first
           paging: false,
           info: false,
+          responsive: {
+            details: false,
+          },
           stateSave: true,
           createdRow: function (row, data, index) {
             if (data[7] === "draft") {
@@ -225,7 +256,7 @@
 
           dataTable.row.add(row);
         }
-        dataTable.columns.adjust().draw();
+        dataTable.columns.adjust().draw().responsive.recalc();
         oldCaption = dataTable.caption().split(" (")[0];
         dataTable.caption(oldCaption + ` (${dataTable.rows().count()})`);
       }
