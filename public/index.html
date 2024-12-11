@@ -58,32 +58,9 @@
         color: #992626;
       }
 
-      .prs {
-        border-collapse: collapse;
-        width: 100%;
-      }
-
-      .prs td,
       .prs th {
-        border: 1px solid #ddd;
-        padding: 4px;
-      }
-
-      .prs tr:nth-child(even) {
-        background-color: #f2f2f2;
-      }
-
-      .prs tr:hover {
-        background-color: #ddd;
-      }
-
-      .prs th {
-        padding-top: 4px;
-        padding-bottom: 4px;
-        text-align: left;
         background-color: #333f67;
         color: white;
-        cursor: pointer;
       }
 
       .prs tr.draft {
@@ -324,11 +301,11 @@
         list="usernames" />
       <datalist id="usernames"></datalist>
     </div>
-    <table id="author" class="prs"></table>
-    <table id="blocking" class="prs"></table>
-    <table id="assignee" class="prs"></table>
-    <table id="reviewer" class="prs"></table>
-    <table id="approved" class="prs"></table>
-    <table id="commented" class="prs"></table>
+    <table id="author" class="prs display"></table>
+    <table id="blocking" class="prs display"></table>
+    <table id="assignee" class="prs display"></table>
+    <table id="reviewer" class="prs display"></table>
+    <table id="approved" class="prs display"></table>
+    <table id="commented" class="prs display"></table>
   </body>
 </html>
