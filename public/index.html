@@ -213,6 +213,7 @@
           order: [[6, "desc"]], // Show most recently updated PRs first
           paging: false,
           info: false,
+          stateSave: true,
           createdRow: function (row, data, index) {
             if (data[10] === "draft") {
               $(row).addClass("draft");
