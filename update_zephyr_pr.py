@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+# Copyright 2024 Google LLC
+# Copyright (c) 2024 The Linux Foundation
+# SPDX-License-Identifier: Apache-2.0
+
 from west.manifest import Manifest
 from west.manifest import ManifestProject
 import subprocess
