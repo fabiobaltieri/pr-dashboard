@@ -21,7 +21,6 @@ class User:
     approved: set = field(default_factory=set)
     reviewer: set = field(default_factory=set)
     commented: set = field(default_factory=set)
-    dismissed: set = field(default_factory=set)
     last_action: dict = field(default_factory=dict)
 
     def toJSON(self):
@@ -89,41 +88,49 @@ def main(argv):
             users[reviewer_name].reviewer.add(key)
             pr.reviewer_names.add(reviewer_name)
 
-        final_review = defaultdict(str)
+        maybe_approved = defaultdict(str)
+        maybe_changes_requested = defaultdict(str)
         for review in reviews:
+            state = review["state"]
             if review["user"] is None:
                 continue
             reviewer_name = review["user"]["login"]
-            final_review[reviewer_name] = review
-
-        for reviewer_name, review in final_review.items():
-            state = review["state"]
-            updated_at = review["submitted_at"]
+            match state:
+                case "COMMENTED":
+                    users[reviewer_name].commented.add(key)
+                    pr.reviewer_names.add(reviewer_name)
+                case "APPROVED":
+                    maybe_approved[reviewer_name] = review
+                    maybe_changes_requested.pop(reviewer_name, None)
+                case "CHANGES_REQUESTED":
+                    maybe_changes_requested[reviewer_name] = review
+                    maybe_approved.pop(reviewer_name, None)
+                case "DISMISSED":
+                    maybe_approved.pop(reviewer_name, None)
+                    maybe_changes_requested.pop(reviewer_name, None)
+                case "PENDING":
+                    # ignore pending reviews from the user associated to the GitHub token being used
+                    pass
             users[reviewer_name].last_action[key] = review["submitted_at"]
-            if state == "APPROVED":
-                users[reviewer_name].approved.add(key)
-                if reviewer_name in pr.assignee_names:
-                    pr.assignee_approved += 1
-                    pr.assignee_names.remove(reviewer_name)
-                    pr.assignee_names.add(f"+{reviewer_name}")
-                else:
-                    pr.approved += 1
-                    pr.reviewer_names.add(f"+{reviewer_name}")
-            elif state == "COMMENTED":
-                users[reviewer_name].commented.add(key)
-                pr.reviewer_names.add(reviewer_name)
-            elif state == "CHANGES_REQUESTED":
-                users[reviewer_name].blocking.add(key)
-                if reviewer_name in pr.assignee_names:
-                    pr.assignee_names.remove(reviewer_name)
-                    pr.assignee_names.add(f"-{reviewer_name}")
-                else:
-                    pr.reviewer_names.add(f"-{reviewer_name}")
-                pr.blocked += 1
-            elif state == "DISMISSED":
-                users[reviewer_name].dismissed.add(key)
+
+        for reviewer_name, review in maybe_approved.items():
+            users[reviewer_name].approved.add(key)
+            if reviewer_name in pr.assignee_names:
+                pr.assignee_approved += 1
+                pr.assignee_names.remove(reviewer_name)
+                pr.assignee_names.add(f"+{reviewer_name}")
             else:
-                print(f"Unkown state: f{state}")
+                pr.approved += 1
+                pr.reviewer_names.add(f"+{reviewer_name}")
+
+        for reviewer_name, review in maybe_changes_requested.items():
+            users[reviewer_name].blocking.add(key)
+            if reviewer_name in pr.assignee_names:
+                pr.assignee_names.remove(reviewer_name)
+                pr.assignee_names.add(f"-{reviewer_name}")
+            else:
+                pr.reviewer_names.add(f"-{reviewer_name}")
+            pr.blocked += 1
 
         prs[key] = pr
 
@@ -138,10 +145,10 @@ def main(argv):
         os.mkdir(OUTDIR);
 
     with open(f"{OUTDIR}/users.json", "w") as outfile:
-        json.dump(users, outfile, cls=Encoder)
+        json.dump(users, outfile, cls=Encoder, indent=4)
 
     with open(f"{OUTDIR}/prs.json", "w") as outfile:
-        json.dump(prs, outfile, cls=Encoder)
+        json.dump(prs, outfile, cls=Encoder, indent=4)
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
