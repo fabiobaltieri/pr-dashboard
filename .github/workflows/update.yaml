@@ -29,7 +29,9 @@ jobs:
         run: |
           mkdir -p west/submanifests
           wget --progress=dot https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/main/west.yml -O west/west.yml
+          wget --progress=dot https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/main/submanifests/optional.yaml -O west/submanifests/optional.yaml
           west init -l west
+          west config manifest.group-filter -- +ci,+optional
 
       - name: Fetch last run data
         env:
