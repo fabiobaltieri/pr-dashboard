@@ -283,6 +283,31 @@
         appendData(values.reviewer, "reviewer");
         appendData(values.approved, "approved");
         appendData(values.commented, "commented");
+
+        // find all unassigned zephyr PRs needing attention
+        const unassigned = Object.keys(prs).filter((key) => {
+          const prData = prs[key];
+          const repo = key.split("/")[0];
+          const pr = key.split("/")[1];
+          if (repo !== "zephyr") {
+            return false;
+          }
+          return prData.assignee_names.length === 0 && !prData.draft;
+        });
+        appendData(unassigned, "unassigned");
+
+        // find all zephyr PRs were only the assignee has approved (and no one else) and where no
+        // one as blocked
+        const onlyAssigneeApproved = Object.keys(prs).filter((key) => {
+          const prData = prs[key];
+          const repo = key.split("/")[0];
+          const pr = key.split("/")[1];
+          if (repo !== "zephyr") {
+            return false;
+          }
+          return prData.assignee_approved === 1 && prData.blocked === 0 && prData.approved === 0;
+        });
+        appendData(onlyAssigneeApproved, "only_assignee_approved");
       }
 
       function processData(data) {
@@ -305,6 +330,8 @@
           { id: "reviewer", caption: "Reviewer" },
           { id: "approved", caption: "Approved" },
           { id: "commented", caption: "Commented" },
+          { id: "unassigned", caption: "Unassigned [zephyr repo only]" },
+          { id: "only_assignee_approved", caption: "Only Assignee Approved [zephyr repo only]" },
         ];
 
         tableConfigs.forEach((config) => {
@@ -371,6 +398,22 @@
           <li class="nav-item">
             <a class="nav-link" href="#commented">Commented</a>
           </li>
+          <li class="nav-item dropdown">
+            <a
+              class="nav-link dropdown-toggle"
+              data-bs-toggle="dropdown"
+              href="#"
+              role="button"
+              aria-expanded="false"
+              >More…</a
+            >
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="#unassigned">Unassigned</a></li>
+              <li>
+                <a class="dropdown-item" href="#only_assignee_approved">Only Assignee Approved</a>
+              </li>
+            </ul>
+          </li>
         </ul>
       </div>
     </nav>
@@ -388,6 +431,11 @@
       <table id="reviewer" class="table table-sm table-striped table-hover prs display"></table>
       <table id="approved" class="table table-sm table-striped table-hover prs display"></table>
       <table id="commented" class="table table-sm table-striped table-hover prs display"></table>
+      <!-- Additional tables for various types of PRs that need attention -->
+      <table id="unassigned" class="table table-sm table-striped table-hover prs display"></table>
+      <table
+        id="only_assignee_approved"
+        class="table table-sm table-striped table-hover prs display"></table>
     </div>
 
     <script
