@@ -8,109 +8,20 @@
 
 <html>
   <head>
-    <style>
-      body {
-        font-family: Roboto;
-        font-size: 14px;
-      }
-
-      a {
-        text-decoration: none;
-        color: #000000;
-      }
-
-      a:hover {
-        text-decoration: underline;
-        color: #000000;
-      }
-
-      #gh-username-input {
-        width: 300px;
-        padding: 10px 15px;
-        font-size: 16px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-        transition: border-color 0.3s, box-shadow 0.3s;
-        outline: none;
-      }
-
-      #gh-username-input:focus {
-        border-color: #333f67;
-        box-shadow: 0px 0px 8px rgba(51, 63, 103, 0.5);
-      }
-
-      #gh-username-input::placeholder {
-        color: #aaa;
-        font-style: italic;
-      }
-
-      span.approved {
-        color: #269926;
-      }
-
-      span.blocked {
-        color: #992626;
-      }
-
-      span.none {
-        color: #999999;
-      }
-
-      a.approved {
-        color: #269926;
-      }
-
-      a.blocked {
-        color: #992626;
-      }
-
-      .ellipsis {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .narrow {
-        max-width: 150px;
-      }
-
-      .wide {
-        max-width: 400px;
-      }
-
-      .prs th {
-        background-color: #333f67;
-        color: white;
-      }
-
-      .prs tr.draft {
-        font-style: italic;
-        opacity: 0.5;
-      }
-
-      .prs caption {
-        position: relative;
-        z-index: -1;
-        font-size: 1.2rem;
-        font-weight: bold;
-        text-align: left;
-        margin-bottom: 10px;
-        margin-top: -1.5em;
-      }
-
-      .dt-container {
-        margin-bottom: 2em;
-      }
-    </style>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous" />
+
+    <link
       rel="stylesheet"
       type="text/css"
-      href="https://cdn.datatables.net/2.1.8/css/dataTables.jqueryui.min.css" />
+      href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.css" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -133,6 +44,88 @@
       rel="stylesheet"
       type="text/css"
       href="https://cdn.datatables.net/responsive/3.0.3/css/responsive.dataTables.min.css" />
+
+    <style>
+      a {
+        text-decoration: none;
+        color: var(--body-text-color);
+      }
+
+      a:hover {
+        color: var(--body-text-color);
+        text-decoration: underline;
+      }
+
+      #gh-username-input {
+        width: 200px;
+        padding: 10px 15px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        transition: border-color 0.3s, box-shadow 0.3s;
+        outline: none;
+      }
+
+      #gh-username-input:focus {
+        border-color: #333f67;
+        box-shadow: 0px 0px 8px rgba(51, 63, 103, 0.5);
+      }
+
+      #gh-username-input::placeholder {
+        color: #aaa;
+        font-style: italic;
+      }
+
+      a.approved {
+        font-weight: 500;
+        color: var(--bs-form-valid-color);
+      }
+
+      a.blocked {
+        font-weight: 500;
+        color: var(--bs-form-invalid-color);
+      }
+
+      .ellipsis {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .narrow {
+        max-width: 150px;
+      }
+
+      .wide {
+        max-width: 400px;
+      }
+
+      .prs tr.draft {
+        font-style: italic;
+        opacity: 0.5;
+      }
+
+      .prs {
+        caption-side: inherit;
+      }
+
+      .prs caption {
+        font-size: 1.2rem;
+        font-weight: bold;
+        padding-top: 0em;
+      }
+
+      .dt-container + .dt-container {
+        margin-top: 2em;
+      }
+
+      .dt-search {
+        position: absolute;
+        right: 2em;
+        font-size: smaller;
+      }
+    </style>
 
     <script type="text/javascript">
       prs = null;
@@ -333,19 +326,58 @@
   </head>
 
   <body>
-    <div style="text-align: center; margin-bottom: 20px">
-      <input
-        id="gh-username-input"
-        type="text"
-        placeholder="Enter GitHub username"
-        list="usernames" />
-      <datalist id="usernames"></datalist>
+    <nav id="navbar" class="navbar bg-body-tertiary px-3 mb-3 sticky-top">
+      <div class="container-fluid">
+        <form class="d-flex">
+          <input
+            class="form-controls"
+            id="gh-username-input"
+            type="text"
+            placeholder="Enter GitHub username"
+            list="usernames" />
+          <datalist id="usernames"></datalist>
+        </form>
+        <ul class="nav nav-pills">
+          <li class="nav-item">
+            <a class="nav-link" href="#author">Authored</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#blocking">Blocked</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#assignee">Assigned</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#reviewer">Reviewer</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#approved">Approved</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#commented">Commented</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div
+      data-bs-spy="scroll"
+      data-bs-target="#navbar"
+      data-bs-smooth-scroll="true"
+      data-bs-root-margin="0px 0px -60%"
+      data-bs-threshold="0,0.1"
+      class="bg-body-tertiary p-3 rounded-2">
+      <table id="author" class="table table-sm table-striped table-hover prs display"></table>
+      <table id="blocking" class="table table-sm table-striped table-hover prs display"></table>
+      <table id="assignee" class="table table-sm table-striped table-hover prs display"></table>
+      <table id="reviewer" class="table table-sm table-striped table-hover prs display"></table>
+      <table id="approved" class="table table-sm table-striped table-hover prs display"></table>
+      <table id="commented" class="table table-sm table-striped table-hover prs display"></table>
     </div>
-    <table id="author" class="prs display compact"></table>
-    <table id="blocking" class="prs display compact"></table>
-    <table id="assignee" class="prs display compact"></table>
-    <table id="reviewer" class="prs display compact"></table>
-    <table id="approved" class="prs display compact"></table>
-    <table id="commented" class="prs display compact"></table>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"></script>
   </body>
 </html>
