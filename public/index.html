@@ -313,11 +313,11 @@
       function processData(data) {
         prs = data[0];
         const users = data[1];
-        for (const [username, values] of Object.entries(users)) {
-          urlParams = new URLSearchParams(window.location.search);
-          if (urlParams.get("username") === username) {
-            appendUser(values);
-          }
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get("username");
+
+        if (username && users[username]) {
+          appendUser(users[username]);
         }
         populateAutocomplete(users);
       }
