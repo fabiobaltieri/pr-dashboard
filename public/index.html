@@ -123,6 +123,10 @@
         padding-top: 0em;
       }
 
+      .prs caption i {
+        background-color: transparent;
+      }
+
       .dt-container + .dt-container {
         margin-top: 2em;
       }
@@ -190,20 +194,22 @@
         return `<a href="https://github.com/zephyrproject-rtos/${repo}/pull/${pr}">${text}</a>`;
       }
 
-      function userLink(user) {
-        linkClass = "";
-        if (user.startsWith("+")) {
-          linkClass = "approved";
-          user = user.substring(1);
-        }
-        if (user.startsWith("-")) {
-          linkClass = "blocked";
-          user = user.substring(1);
+      function userLink(user, internal = false) {
+        let linkClass = "";
+        if (!internal) {
+          if (user.startsWith("+")) {
+            linkClass = "approved";
+            user = user.substring(1);
+          }
+          if (user.startsWith("-")) {
+            linkClass = "blocked";
+            user = user.substring(1);
+          }
         }
 
-        return `<a class="${linkClass}" href="https://github.com/${user}">${user}</a>`;
+        const href = internal ? `?username=${user}` : `https://github.com/${user}`;
+        return `<a class="${linkClass}" href="${href}">${user}</a>`;
       }
-
       function sortUsernames(a, b) {
         const getPriority = (str) => (str.startsWith("-") ? -2 : str.startsWith("+") ? -1 : 0);
         const priorityA = getPriority(a);
@@ -327,6 +333,18 @@
           appendUser(users[username]);
         }
         populateAutocomplete(users);
+
+        const leaderboard = $("#leaderboard").DataTable();
+        Object.entries(users).forEach(([username, stats]) => {
+          leaderboard.row.add([
+            userLink(username, (internal = true)),
+            stats.author.length,
+            stats.assignee.length,
+            stats.approved.length,
+            stats.blocking.length,
+          ]);
+        });
+        leaderboard.columns.adjust().draw().responsive.recalc();
       }
 
       window.addEventListener("load", () => {
@@ -345,8 +363,28 @@
           createDataTable(config.id, config.caption);
         });
 
+        // create Leaderboard table (user - assigned PRs - approved PRs - blocked PRs)
+        new DataTable($("#leaderboard"), {
+          columns: [
+            { title: "User", responsivePriority: 1 },
+            { title: "Authored", responsivePriority: 2 },
+            { title: "Assigned", responsivePriority: 3 },
+            { title: "Approved", responsivePriority: 4 },
+            { title: "Blocked", responsivePriority: 5 },
+          ],
+          paging: true,
+          info: false,
+          responsive: {
+            details: false,
+          },
+          order: [[2, "desc"]], // default sort is assigned-desc
+          stateSave: true,
+          lengthChange: false,
+        }).caption("<i class='bi-trophy'></i> Leaderboard");
+
         const ghUsernameInput = document.getElementById("gh-username-input");
-        ghUsernameInput.value = new URLSearchParams(window.location.search).get("username") || loadGHUser();
+        ghUsernameInput.value =
+          new URLSearchParams(window.location.search).get("username") || loadGHUser();
         history.replaceState(null, "", `?username=${ghUsernameInput.value}`);
 
         // ENTER key pressed
@@ -369,7 +407,6 @@
         Promise.all(urls.map((url) => fetch(url).then((res) => res.json()))).then((res) =>
           processData(res)
         );
-
       });
     </script>
   </head>
@@ -419,6 +456,11 @@
               <li>
                 <a class="dropdown-item" href="#only_assignee_approved">Only Assignee Approved</a>
               </li>
+              <li>
+                <a class="dropdown-item" href="#leaderboard"
+                  ><i class="bi bi-trophy"></i> Leaderboard</a
+                >
+              </li>
             </ul>
           </li>
         </ul>
@@ -450,6 +492,9 @@
       <table
         id="only_assignee_approved"
         class="table table-sm table-striped table-hover prs display"></table>
+      <hr class="border border-primary border-3 opacity-25" />
+      <!-- Leaderboard -->
+      <table id="leaderboard" class="table table-sm table-striped table-hover prs display"></table>
     </div>
 
     <script
