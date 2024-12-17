@@ -233,13 +233,23 @@
             {
               title: "Assignee",
               render: (data, type, row) =>
-                type == "display" ? data.sort(sortUsernames).map(userLink).join(", ") : data,
+                type == "display"
+                  ? data
+                      .sort(sortUsernames)
+                      .map((user) => userLink(user))
+                      .join(", ")
+                  : data,
               responsivePriority: 4,
             },
             {
               title: "Reviewers",
               render: (data, type, row) =>
-                type == "display" ? data.sort(sortUsernames).map(userLink).join(", ") : data,
+                type == "display"
+                  ? data
+                      .sort(sortUsernames)
+                      .map((user) => userLink(user))
+                      .join(", ")
+                  : data,
               className: "ellipsis narrow",
               responsivePriority: 5,
             },
