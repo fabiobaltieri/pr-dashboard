@@ -84,6 +84,10 @@
         font-style: italic;
       }
 
+      #scroll-area {
+        font-size: small;
+      }
+
       a.approved {
         font-weight: 500;
         color: var(--bs-form-valid-color);
@@ -118,7 +122,7 @@
       }
 
       .prs caption {
-        font-size: 1.2rem;
+        font-size: 1.2em;
         font-weight: bold;
         padding-top: 0em;
       }
@@ -134,7 +138,6 @@
       .dt-search {
         position: absolute;
         right: 2em;
-        font-size: smaller;
       }
     </style>
 
@@ -473,7 +476,8 @@
       data-bs-smooth-scroll="true"
       data-bs-root-margin="0px 0px -60%"
       data-bs-threshold="0,0.1"
-      class="bg-body-tertiary p-3 rounded-2">
+      class="bg-body-tertiary p-3 rounded-2"
+      id="scroll-area">
       <table id="author" class="table table-sm table-striped table-hover prs display"></table>
       <hr class="border border-primary border-3 opacity-25" />
       <table id="blocking" class="table table-sm table-striped table-hover prs display"></table>
