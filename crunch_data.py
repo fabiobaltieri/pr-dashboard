@@ -68,6 +68,7 @@ def main(argv):
     for key, data in pr_dump.items():
         pr_data = data["pr"]
         reviews = data["reviews"]
+        comments = data["comments"]
 
         pr = PR()
         pr.title = pr_data["title"]
@@ -112,6 +113,10 @@ def main(argv):
                     # ignore pending reviews from the user associated to the GitHub token being used
                     pass
             users[reviewer_name].last_action[key] = review["submitted_at"]
+
+        for comment in comments:
+            commenter_name = comment["user"]["login"]
+            users[commenter_name].commented.add(key)
 
         for reviewer_name, review in maybe_approved.items():
             users[reviewer_name].approved.add(key)
