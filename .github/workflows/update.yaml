@@ -38,12 +38,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir cache
-          ./update_zephyr_pr.py
+          python -u update_zephyr_pr.py
           bzip2 -c cache/data_dump.json > public/data_dump.json.bz2
 
       - name: Crunch
         run: |
-          ./crunch_data.py
+          python -u crunch_data.py
 
       - name: Setup pages
         uses: actions/configure-pages@v3
