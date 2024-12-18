@@ -138,6 +138,7 @@ query($org: String!, $repo: String!, $prCursor: String, $prPageSize: Int!, $comm
 }
 """
 
+
 def fetch_paginated_data(gh, query, variables, pr, data_key):
     """
     Generic function to handle pagination for GraphQL queries.
@@ -158,9 +159,7 @@ def fetch_paginated_data(gh, query, variables, pr, data_key):
         variables[cursor_key] = page_info["endCursor"]
         _, result = gh.requester.graphql_query(query, variables)
         pr_node = result["data"]["repository"]["pullRequests"]["nodes"][0]
-        pr[data_key]["nodes"].extend(
-            pr_node[data_key]["nodes"]
-        )
+        pr[data_key]["nodes"].extend(pr_node[data_key]["nodes"])
         page_info = pr_node[data_key]["pageInfo"]
 
 
@@ -174,8 +173,8 @@ def fetch_pull_requests(gh, query, variables):
         pull_requests = repository["pullRequests"]["nodes"]
 
         for pr in pull_requests:
-          fetch_paginated_data(gh, query, variables, pr, "comments")
-          fetch_paginated_data(gh, query, variables, pr, "latestOpinionatedReviews")
+            fetch_paginated_data(gh, query, variables, pr, "comments")
+            fetch_paginated_data(gh, query, variables, pr, "latestOpinionatedReviews")
 
         data.extend(pull_requests)
 
@@ -211,7 +210,9 @@ def main(argv):
             )
         )
 
+    print_rate_limit(gh, args.org)
     save_prs(all_prs)
+
     return 0
 
 
