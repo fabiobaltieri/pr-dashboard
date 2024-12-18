@@ -22,4 +22,4 @@ for project in manifest.get_projects([]):
 
 repos_arg = ",".join(repos)
 
-subprocess.run(["./update_pr.py", "--repos", repos_arg])
+subprocess.run(["python", "-u", "update_pr.py", "--repos", repos_arg])
