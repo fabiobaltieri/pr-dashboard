@@ -223,8 +223,47 @@
       function createDataTable(id, caption) {
         new DataTable($(`#${id}`), {
           columns: [
-            { title: "#", responsivePriority: 100 },
-            { title: "Title", className: "ellipsis wide", responsivePriority: 2 },
+            {
+              title: "PR",
+              responsivePriority: 100,
+              type: "string",
+              render: (data, type, row) => {
+                if (type == "display") {
+                  docHref = `https://builds.zephyrproject.io/zephyr/pr/${row[0]}/docs/index.html`;
+                  docLink = `<a href="${docHref}" target="_blank" title="CI-built documentation">
+                               <i class="bi bi-file-earmark-text"></i>
+                             </a>`;
+                  return docLink + " " + prLink(row[13], data, data);
+                } else {
+                  return data;
+                }
+              },
+            },
+            {
+              title: "Title",
+              className: "ellipsis wide",
+              responsivePriority: 2,
+              render: (data, type, row) => {
+                if (type == "display") {
+                  // add orange "R" badge if rebasing is needed, and a red "CI" badge if CI fails
+                  let badges = "";
+                  if (!row[8] || row[9]) {
+                    // broken CI is red, pending CI is blue
+                    badge_color = row[9] ? "info" : "danger";
+                    badges += `<span class="badge bg-${badge_color}">CI</span> `;
+                  }
+                  if (row[10]) {
+                    badges += `<span class="badge bg-warning text-dark">R</span> `;
+                  }
+                  if (row[11]) {
+                    badges = `<span class="badge bg-secondary">?</span> `;
+                  }
+
+                  return badges + data;
+                }
+                return data;
+              },
+            },
             {
               title: "Author",
               render: (data, type, row) => (type == "display" ? userLink(data) : data),
@@ -260,6 +299,10 @@
               responsivePriority: 6,
             },
             { title: "Status", visible: false },
+            { title: "CI Passes", visible: false },
+            { title: "Rebase needed", visible: false },
+            { title: "Unknown mergeable status", visible: false },
+            { title: "Repo", visible: false },
           ],
           order: [[6, "desc"]], // Show most recently updated PRs first
           paging: false,
@@ -269,7 +312,7 @@
           },
           stateSave: true,
           createdRow: function (row, data, index) {
-            if (data[7] === "draft") {
+            if (data[7] === true) {
               $(row).addClass("draft");
             }
           },
@@ -283,17 +326,23 @@
           const prData = prs[key];
           const repo = key.split("/")[0];
           const pr = key.split("/")[1];
-
           const row = [
-            prLink(repo, pr, "#" + pr),
-            prData ? prLink(repo, pr, prData.title) : "-- missing PR data --",
-            prData ? prData.author : "",
-            prData ? prData.assignee_names : [],
-            prData ? prData.reviewer_names : [],
-            prData ? `${repo}/${prData.base}` : "",
-            prData ? prData.updated_at : "",
-            prData ? (prData.draft ? "draft" : "open") : "",
+            pr,
+            prLink(repo, pr, prData.title),
+            prData.author,
+            prData.assignee_names,
+            prData.reviewer_names,
+            `${repo}/${prData.base}`,
+            prData.updated_at,
+            prData.draft,
+            prData.ci_passes,
+            prData.ci_pending,
+            prData.needs_rebase,
+            prData.unknown_mergeable_status,
+            repo,
           ];
+
+          console.log(row);
 
           dataTable.row.add(row);
         }
@@ -418,6 +467,15 @@
         });
 
         const urls = ["prs.json", "users.json"];
+
+        // basic HEAD request on prs.json to get last modified date (format using momemnt js)
+        fetch("prs.json", { method: "HEAD" }).then((res) => {
+          const lastModified = new Date(res.headers.get("last-modified"));
+          document.getElementById("last_update").textContent = `Last update: ${moment(
+            lastModified
+          ).fromNow()}`;
+        });
+
         Promise.all(urls.map((url) => fetch(url).then((res) => res.json()))).then((res) =>
           processData(res)
         );
@@ -510,6 +568,21 @@
       <hr class="border border-primary border-3 opacity-25" />
       <!-- Leaderboard -->
       <table id="leaderboard" class="table table-sm table-striped table-hover prs display"></table>
+    </div>
+
+    <div class="card m-2 w-30 position-fixed bottom-0 end-0">
+      <div class="card-body p-2">
+        <h6 id="last_update" class="card-title text-center" style="font-size: 0.7em"></h6>
+        <ul class="card-text list-unstyled text-center mb-0" style="font-size: 0.7em">
+          <li><span class="badge bg-warning text-dark">R</span> Rebase needed</li>
+          <li>
+            <span class="badge bg-danger">CI</span> / <span class="badge bg-info">CI</span> CI
+            failed / pending
+          </li>
+          <li><span class="badge bg-secondary">?</span> Unknown status</li>
+          <li><i class="bi bi-file-earmark-text"></i> CI-built documentation</li>
+        </ul>
+      </div>
     </div>
 
     <script
