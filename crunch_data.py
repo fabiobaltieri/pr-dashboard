@@ -76,7 +76,7 @@ def main(argv):
         pr_dump = json.load(infile)
 
     for pr_data in pr_dump:
-        key = f"{pr_data["repository"]["name"]}/{pr_data['number']}"
+        key = f"{pr_data['repository']['name']}/{pr_data['number']}"
         pr = PR()
         pr.title = pr_data["title"]
         pr.author = pr_data["author"]["login"]
