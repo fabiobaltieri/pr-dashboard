@@ -8,140 +8,212 @@ import argparse
 import json
 import os
 import sys
-from github import Github, GithubException
-
-from dataclasses import dataclass
+from github import Github
 
 token = os.environ["GITHUB_TOKEN"]
 
-PER_PAGE = 100
 DATA_FILE = "cache/data_dump.json"
-BOOTSTRAP_LIMIT = 300
 
-@dataclass
-class Stats:
-    new: int = 0
-    cached: int = 0
-    updated: int = 0
+PAGE_SIZE_SMALL_REPOS = 10
+PAGE_SIZE_ZEPHYR = 50
+
 
 def print_rate_limit(gh, org):
-    response = gh.get_organization(org)
-    for header, value in response.raw_headers.items():
-        if header.startswith("x-ratelimit"):
-            print(f"{header}: {value}")
+    rate_limit = gh.get_rate_limit().graphql
+    print(f"GraphQL rate limit for {org}: {rate_limit.remaining}/{rate_limit.limit}")
+
 
 def repo_from_url(url):
-    return url.split('/')[-3]
+    return url.split("/")[-3]
 
-def fetch_pr_issues(gh, org, repos):
-    query = "is:pr is:open"
-    for repo in repos:
-        query += f" repo:{org}/{repo}"
 
-    print(f"Query: {query}")
-
-    pr_issues = {}
-    issues = gh.search_issues(query=query)
-    for issue in issues:
-        repo = repo_from_url(issue.url)
-        key = f"{repo}/{issue.number}"
-        pr_issues[key] = issue
-    print(f"Found {len(pr_issues)} issues")
-    return pr_issues
-
-def fetch_reviews(pr):
-    reviews = []
-    for review in pr.get_reviews():
-        reviews.append(review.raw_data)
-    return reviews
-
-def fetch_comments(pr_issue):
-    comments = []
-    for comment in pr_issue.get_comments():
-        comments.append(comment._rawData)
-    return comments
-
-def load_old_prs():
-    print(f"Loading previous data from {DATA_FILE}")
-
-    try:
-        with open(DATA_FILE, "r") as infile:
-            out = json.load(infile)
-            print(f"Old data loaded: {len(out)} PRs")
-            return out
-    except Exception as e:
-        print(f"Cannot load {DATA_FILE}: {e}, starting from empty")
-        return {}
-
-def save_new_prs(data):
+def save_prs(data):
     if not os.path.exists("cache"):
-        os.mkdir("cache");
+        os.mkdir("cache")
 
     with open(DATA_FILE, "w") as outfile:
-        json.dump(data, outfile)
+        json.dump(data, outfile, indent=4)
 
-def update_entry(entry, pr_issue):
-    pr = pr_issue.as_pull_request()
-    entry["pr"] = pr.raw_data
-    entry["reviews"] = fetch_reviews(pr)
-    entry["comments"] = fetch_comments(pr_issue)
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(description=__doc__)
 
-    parser.add_argument("-o", "--org", default="zephyrproject-rtos",
-                        help="Github organisation")
-    parser.add_argument("-r", "--repos", default="zephyr,segger",
-                        help="Github repositories, comma separated")
+    parser.add_argument(
+        "-o", "--org", default="zephyrproject-rtos", help="Github organisation"
+    )
+    parser.add_argument(
+        "-r",
+        "--repos",
+        default="zephyr,segger",
+        help="Github repositories, comma separated",
+    )
 
     return parser.parse_args(argv)
 
+
+GRAPHQL_QUERY = """
+query($org: String!, $repo: String!, $prCursor: String, $prPageSize: Int!, $commentsCursor: String, $reviewsCursor: String) {
+  rateLimit {
+    cost
+    limit
+    remaining
+    used
+    resetAt
+  }
+  repository(owner: $org, name: $repo) {
+    nameWithOwner
+    pullRequests(first: $prPageSize, after: $prCursor, states: OPEN, orderBy: {field: CREATED_AT, direction: ASC}) {
+      nodes {
+        number
+        url
+        title
+        isDraft
+        repository {
+          name
+        }
+        baseRefName
+        createdAt
+        updatedAt
+        mergeable
+        author {
+          login
+        }
+        assignees(first: 10) {
+          edges {
+            node {
+              login
+            }
+          }
+        }
+        reviewRequests(last: 30) {
+          nodes {
+            requestedReviewer {
+              ... on User {
+              	login
+              }
+            }
+          }
+        }
+        latestOpinionatedReviews(first: 50, after: $reviewsCursor) {
+          nodes {
+            author {
+              login
+            }
+            state
+            submittedAt
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+        comments(first: 80, after: $commentsCursor) {
+          nodes {
+            author {
+              login
+            }
+            createdAt
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+        commits(last: 1) {
+          nodes {
+            commit {
+              statusCheckRollup {
+                state
+              }
+            }
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}
+"""
+
+def fetch_paginated_data(gh, query, variables, pr, data_key):
+    """
+    Generic function to handle pagination for GraphQL queries.
+
+    Parameters:
+        gh (object): GitHub client object.
+        query (str): GraphQL query string.
+        variables (dict): Variables for the GraphQL query.
+        pr (dict): Dictionary containing pull request data.
+        data_key (str): Key to identify the data in the `pr` dictionary.
+
+    Returns:
+        None: Updates the `pr` dictionary in place.
+    """
+    page_info = pr[data_key]["pageInfo"]
+    while page_info["hasNextPage"]:
+        cursor_key = f"{data_key}Cursor"
+        variables[cursor_key] = page_info["endCursor"]
+        _, result = gh.requester.graphql_query(query, variables)
+        pr_node = result["data"]["repository"]["pullRequests"]["nodes"][0]
+        pr[data_key]["nodes"].extend(
+            pr_node[data_key]["nodes"]
+        )
+        page_info = pr_node[data_key]["pageInfo"]
+
+
+def fetch_pull_requests(gh, query, variables):
+    data = []
+    cursor = None
+    while True:
+        variables["prCursor"] = cursor
+        _, result = gh.requester.graphql_query(query, variables)
+        repository = result["data"]["repository"]
+        pull_requests = repository["pullRequests"]["nodes"]
+
+        for pr in pull_requests:
+          fetch_paginated_data(gh, query, variables, pr, "comments")
+          fetch_paginated_data(gh, query, variables, pr, "latestOpinionatedReviews")
+
+        data.extend(pull_requests)
+
+        page_info = repository["pullRequests"]["pageInfo"]
+        if not page_info["hasNextPage"]:
+            break
+        cursor = page_info["endCursor"]
+    return data
+
+
 def main(argv):
     args = parse_args(argv)
+    all_prs = []
 
-    token = os.environ.get('GITHUB_TOKEN', None)
-    gh = Github(token, per_page=PER_PAGE)
-
+    token = os.environ.get("GITHUB_TOKEN", None)
+    gh = Github(token)
     print_rate_limit(gh, args.org)
 
-    old_data = load_old_prs()
-    pr_issues = fetch_pr_issues(gh, args.org, args.repos.split(","))
+    for repo in args.repos.split(","):
+        print(f"Processing PRs for {args.org}/{repo}")
+        # Optimize page size for repos known to have few PRs so that GraphQL query cost is minimized
+        pr_page_size = (
+            PAGE_SIZE_ZEPHYR
+            if (args.org == "zephyrproject-rtos" and repo == "zephyr")
+            else PAGE_SIZE_SMALL_REPOS
+        )
 
-    new_data = {}
-    stats = Stats()
-    for key, pr_issue in pr_issues.items():
-        if stats.new + stats.updated > BOOTSTRAP_LIMIT:
-            print("bootstrap limit hit")
-            break
+        all_prs.extend(
+            fetch_pull_requests(
+                gh,
+                GRAPHQL_QUERY,
+                {"org": args.org, "repo": repo, "prPageSize": pr_page_size},
+            )
+        )
 
-        new_updated_at = pr_issue.updated_at.timestamp()
-        new_data[key] = {"updated_at": new_updated_at}
+    save_prs(all_prs)
+    return 0
 
-        if not key in old_data:
-            print(f"new {key}");
-            stats.new += 1
-            update_entry(new_data[key], pr_issue)
-            continue
-
-        old_data_entry = old_data[key]
-
-        old_updated_at = old_data_entry["updated_at"]
-        if new_updated_at == old_updated_at:
-            # print(f"cache {key}");
-            stats.cached += 1
-            new_data[key]["pr"] = old_data_entry["pr"]
-            new_data[key]["reviews"] = old_data_entry["reviews"]
-            new_data[key]["comments"] = old_data_entry["comments"]
-            continue
-
-        print(f"update {key}");
-        stats.updated += 1
-        update_entry(new_data[key], pr_issue)
-
-    print(stats)
-    print_rate_limit(gh, args.org)
-
-    save_new_prs(new_data)
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
