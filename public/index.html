@@ -158,6 +158,7 @@
       })();
 
       prs = null;
+      lastDatasetUpdate = null;
 
       function saveGHUser(name) {
         localStorage.setItem("gh_user", name);
@@ -321,6 +322,7 @@
 
       function appendData(values, tableId) {
         const dataTable = $(`#${tableId}`).DataTable();
+        dataTable.clear();
 
         for (const key of values.sort().reverse()) {
           const prData = prs[key];
@@ -412,6 +414,29 @@
         leaderboard.columns.adjust().draw().responsive.recalc();
       }
 
+      function refreshData() {
+        const urls = ["prs.json", "users.json"];
+
+        // basic HEAD request on prs.json to get last modified date
+        fetch("prs.json", { method: "HEAD" }).then((res) => {
+          d = new Date(res.headers.get("last-modified"));
+          document.getElementById("last_update").textContent = `Last update: ${moment(
+            d
+          ).fromNow()}`;
+
+          if (lastDatasetUpdate === null || moment(d).isAfter(lastDatasetUpdate)) {
+            Promise.all(urls.map((url) => fetch(url).then((res) => res.json())))
+              .then((data) => {
+                lastDatasetUpdate = d;
+                processData(data);
+              })
+              .catch((error) => {
+                console.error("Error refreshing data:", error);
+              });
+          }
+        });
+      }
+
       window.addEventListener("load", () => {
         const tableConfigs = [
           { id: "author", caption: "Authored" },
@@ -469,19 +494,8 @@
           window.location.href = `?username=${username}`;
         });
 
-        const urls = ["prs.json", "users.json"];
-
-        // basic HEAD request on prs.json to get last modified date (format using momemnt js)
-        fetch("prs.json", { method: "HEAD" }).then((res) => {
-          const lastModified = new Date(res.headers.get("last-modified"));
-          document.getElementById("last_update").textContent = `Last update: ${moment(
-            lastModified
-          ).fromNow()}`;
-        });
-
-        Promise.all(urls.map((url) => fetch(url).then((res) => res.json()))).then((res) =>
-          processData(res)
-        );
+        refreshData();
+        setInterval(refreshData, 10000);
       });
     </script>
   </head>
