@@ -372,17 +372,22 @@
         appendData(unassigned, "unassigned");
 
         // find all zephyr PRs were only the assignee has approved (and no one else) and where no
-        // one as blocked
-        const onlyAssigneeApproved = Object.keys(prs).filter((key) => {
+        // one as blocked, or PRs with only one approval where author is one of the assignees
+        const missingOneApproval = Object.keys(prs).filter((key) => {
           const prData = prs[key];
           const repo = key.split("/")[0];
           const pr = key.split("/")[1];
           if (repo !== "zephyr") {
             return false;
           }
-          return prData.assignee_approved === 1 && prData.blocked === 0 && prData.approved === 0;
+          const assigneeIsAuthor = prData.assignee_names.includes(prData.author);
+          if (assigneeIsAuthor) {
+            return prData.approved === 1 && prData.blocked === 0;
+          } else {
+            return prData.assignee_approved === 1 && prData.blocked === 0 && prData.approved === 0;
+          }
         });
-        appendData(onlyAssigneeApproved, "only_assignee_approved");
+        appendData(missingOneApproval, "missing_one_approval");
       }
 
       function processData(data) {
@@ -418,7 +423,7 @@
           { id: "approved", caption: "Approved" },
           { id: "commented", caption: "Commented" },
           { id: "unassigned", caption: "Unassigned [zephyr repo only]" },
-          { id: "only_assignee_approved", caption: "Only Assignee Approved [zephyr repo only]" },
+          { id: "missing_one_approval", caption: "Needs 1 More Approval [zephyr repo only]" },
         ];
 
         tableConfigs.forEach((config) => {
@@ -526,7 +531,7 @@
             <ul class="dropdown-menu dropdown-menu-end">
               <li><a class="dropdown-item" href="#unassigned">Unassigned</a></li>
               <li>
-                <a class="dropdown-item" href="#only_assignee_approved">Only Assignee Approved</a>
+                <a class="dropdown-item" href="#missing_one_approval">Needs 1 More Approval</a>
               </li>
               <li>
                 <a class="dropdown-item" href="#leaderboard"
@@ -563,7 +568,7 @@
       <table id="unassigned" class="table table-sm table-striped table-hover prs display"></table>
       <hr class="border border-primary border-3 opacity-25" />
       <table
-        id="only_assignee_approved"
+        id="missing_one_approval"
         class="table table-sm table-striped table-hover prs display"></table>
       <hr class="border border-primary border-3 opacity-25" />
       <!-- Leaderboard -->
