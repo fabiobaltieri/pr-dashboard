@@ -47,6 +47,14 @@ jobs:
         run: |
           python -u crunch_data.py
 
+      - name: Upload debugging artifacts (fail only)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: ignore
+          path:
+            public/
+
       - name: Setup pages
         uses: actions/configure-pages@v3
 
