@@ -111,17 +111,15 @@
         return `<a href="https://github.com/zephyrproject-rtos/${repo}/pull/${pr}">${text}</a>`;
       }
 
-      function userLink(user, internal = false) {
+      function userLink(user, internal = true) {
         let linkClass = "";
-        if (!internal) {
-          if (user.startsWith("+")) {
-            linkClass = "approved";
-            user = user.substring(1);
-          }
-          if (user.startsWith("-")) {
-            linkClass = "blocked";
-            user = user.substring(1);
-          }
+        if (user.startsWith("+")) {
+          linkClass = "approved";
+          user = user.substring(1);
+        }
+        if (user.startsWith("-")) {
+          linkClass = "blocked";
+          user = user.substring(1);
         }
 
         const href = internal ? `?username=${user}` : `https://github.com/${user}`;
@@ -318,7 +316,7 @@
         leaderboard.clear();
         Object.entries(users).forEach(([username, stats]) => {
           leaderboard.row.add([
-            userLink(username, (internal = true)),
+            userLink(username),
             stats.author.length,
             stats.assignee.length,
             stats.approved.length,
