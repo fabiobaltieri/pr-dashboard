@@ -20,6 +20,7 @@ class User:
     assignee: set = field(default_factory=set)
     blocking: set = field(default_factory=set)
     approved: set = field(default_factory=set)
+    previously_approved: set = field(default_factory=set)
     reviewer: set = field(default_factory=set)
     commented: set = field(default_factory=set)
     last_action: dict = field(default_factory=dict)
@@ -135,6 +136,21 @@ def main(argv):
             # TODO: it might make sense to populate the commented set with the PRs where the user
             # *only* commented, not when they also actually reviewed.
             users[commenter_name].commented.add(key)
+
+        # look for dismissed reviews where author had previously approved, meaning they may be
+        # interested in refreshing their +1
+        for tl_item in pr_data["dismissedReviewsTimelineItems"]["nodes"]:
+            review = tl_item["review"]
+            reviewer_name = review["author"]["login"]
+            prev_review_state = tl_item["previousReviewState"]
+            if prev_review_state != "APPROVED":
+                continue
+            if tl_item["actor"] and tl_item["actor"]["login"] == reviewer_name:
+                # ignore self-dismissed reviews
+                continue
+            if reviewer_name not in approved and reviewer_name not in changes_requested:
+                print(f"PR {key} {reviewer_name} previously approved and could do a refresh +1")
+                users[reviewer_name].previously_approved.add(key)
 
         for reviewer_name, review in approved.items():
             users[reviewer_name].approved.add(key)

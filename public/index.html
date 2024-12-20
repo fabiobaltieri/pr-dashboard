@@ -268,6 +268,7 @@
         appendData(values.assignee, "assignee");
         appendData(values.reviewer, "reviewer");
         appendData(values.approved, "approved");
+        appendData(values.previously_approved, "previously_approved");
         appendData(values.commented, "commented");
 
         // find all unassigned zephyr PRs needing attention
@@ -356,6 +357,7 @@
           { id: "assignee", caption: "Assigned" },
           { id: "reviewer", caption: "Reviewer" },
           { id: "approved", caption: "Approved" },
+          { id: "previously_approved", caption: "Previously Approved" },
           { id: "commented", caption: "Commented" },
           { id: "unassigned", caption: "Unassigned [zephyr repo only]" },
           { id: "missing_one_approval", caption: "Needs 1 More Approval [zephyr repo only]" },
@@ -441,6 +443,8 @@
             <a class="nav-link" href="#approved">Approved</a>
           </li>
           <li class="nav-item">
+            <a class="nav-link" href="#previously_approved">Previously Approved</a>
+          <li class="nav-item">
             <a class="nav-link" href="#commented">Commented</a>
           </li>
           <li class="nav-item dropdown">
@@ -485,6 +489,10 @@
       <table id="reviewer" class="table table-sm table-striped table-hover prs display"></table>
       <hr class="border border-primary border-3 opacity-25" />
       <table id="approved" class="table table-sm table-striped table-hover prs display"></table>
+      <hr class="border border-primary border-3 opacity-25" />
+      <table
+        id="previously_approved"
+        class="table table-sm table-striped table-hover prs display"></table>
       <hr class="border border-primary border-3 opacity-25" />
       <table id="commented" class="table table-sm table-striped table-hover prs display"></table>
       <hr class="border border-primary border-3 opacity-25" />
