@@ -158,7 +158,8 @@ def fetch_paginated_data(gh, query, variables, pr, data_key):
         cursor_key = f"{data_key}Cursor"
         variables[cursor_key] = page_info["endCursor"]
         _, result = gh.requester.graphql_query(query, variables)
-        pr_node = result["data"]["repository"]["pullRequests"]["nodes"][0]
+        pr_nodes = result["data"]["repository"]["pullRequests"]["nodes"]
+        pr_node = next((node for node in pr_nodes if node["number"] == pr["number"]), None)
         pr[data_key]["nodes"].extend(pr_node[data_key]["nodes"])
         page_info = pr_node[data_key]["pageInfo"]
 
