@@ -315,6 +315,7 @@
         populateAutocomplete(users);
 
         const leaderboard = $("#leaderboard").DataTable();
+        leaderboard.clear();
         Object.entries(users).forEach(([username, stats]) => {
           leaderboard.row.add([
             userLink(username, (internal = true)),
