@@ -105,6 +105,9 @@ def main(argv):
             pr.assignee_names.add(assignee_name)
 
         for reviewer in pr_data["reviewRequests"]["nodes"]:
+            if not reviewer["requestedReviewer"]:
+                print("skipping review, no data")
+                continue
             reviewer_name = reviewer["requestedReviewer"]["login"]
             users[reviewer_name].reviewer.add(key)
             pr.reviewer_names.add(reviewer_name)
