@@ -78,6 +78,7 @@ def main(argv):
 
     for pr_data in pr_dump:
         key = f"{pr_data['repository']['name']}/{pr_data['number']}"
+        print(f"processing: {key}")
         pr = PR()
         pr.title = pr_data["title"]
         pr.author = pr_data["author"]["login"]
@@ -115,7 +116,7 @@ def main(argv):
             if review["author"] is None:
                 continue
             reviewer_name = review["author"]["login"]
-            print(f"PR {key} {reviewer_name} {state}")
+            print(f"review: {reviewer_name} {state}")
             match state:
                 case "COMMENTED":
                     users[reviewer_name].commented.add(key)
