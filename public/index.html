@@ -145,7 +145,7 @@
                   docLink = `<a href="${docHref}" target="_blank" title="CI-built documentation">
                                <i class="bi bi-file-earmark-text"></i>
                              </a>`;
-                  return docLink + " " + prLink(row[13], data, data);
+                  return docLink + " " + prLink(row[12], data, data);
                 } else {
                   return data;
                 }
@@ -157,6 +157,7 @@
               responsivePriority: 2,
               render: (data, type, row) => {
                 if (type == "display") {
+                  const link = prLink(row[12], row[0], data);
                   // add orange "R" badge if rebasing is needed, and a red "CI" badge if CI fails
                   let badges = "";
                   if (!row[8] || row[9]) {
@@ -171,7 +172,7 @@
                     badges = `<span class="badge bg-secondary">?</span> `;
                   }
 
-                  return badges + data;
+                  return badges + link;
                 }
                 return data;
               },
@@ -241,7 +242,7 @@
           const pr = key.split("/")[1];
           const row = [
             pr,
-            prLink(repo, pr, prData.title),
+            prData.title,
             prData.author,
             prData.assignee_names,
             prData.reviewer_names,
