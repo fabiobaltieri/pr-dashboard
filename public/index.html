@@ -83,6 +83,7 @@
 
       function populateAutocomplete(users) {
         const datalist = document.getElementById("usernames");
+        datalist.innerHTML = "";
         Object.keys(users)
           .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
           .forEach((username) => {
